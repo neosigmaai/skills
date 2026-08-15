@@ -28,7 +28,7 @@ guessing.
 ## 2. Install and lifecycle
 
 ```bash
-npm install neosigma@^0.9.0
+npm install neosigma
 ```
 
 **Migrating from `neosigma-sdk`.** The npm package was renamed to `neosigma`.

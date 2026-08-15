@@ -73,7 +73,7 @@ build and one instrumented request succeed.
 ## 2. Install and lifecycle
 
 ```bash
-npm install neosigma@^0.9.0
+npm install neosigma
 ```
 
 **Migrating from `neosigma-sdk`.** The npm package was renamed to `neosigma`.
@@ -460,6 +460,19 @@ nothing else. The callback's return value is NOT captured, so write the output
 yourself with `setContent`. Use `startChat()`/`endChat()` and
 `startTool()`/`endTool()` when the open and the close happen in different
 functions.
+
+The open and close pairs take typed objects, so the fields must be passed by
+name:
+
+- `startChat({ model, promptMessages?, thinkingMode? })` opens a `chat` span.
+  `model` is required.
+- `endChat(span, { completion?, usage?, latencyMs?, isError?, errorMessage? })`
+  closes it. **`completion` is optional and nothing fails when it is missing,
+  but the span then records no output.** Pass the model's reply here rather than
+  writing it separately.
+- `startTool({ name, argsJson? })` opens an `execute_tool` span. `name` is
+  required.
+- `endTool(span, { result?, isError?, errorMessage? })` closes it.
 
 Two more setters apply to a custom span. `setTokenUsage(span, usage)` attaches
 token counts, which `endChat()` takes as an argument instead.

@@ -216,6 +216,19 @@ write the output yourself with `set_content`. Use `start_chat()`/`end_chat()`
 and `start_tool()`/`end_tool()` when the open and the close happen in different
 functions.
 
+The open and close pairs take typed models from `neosigma.types`:
+
+- `start_chat(ChatStart(model, prompt_messages=None, thinking_mode=None))` opens
+  a `chat` span. `model` is required.
+- `end_chat(span, ChatEnd(completion=None, usage=None, latency_ms=None,
+  is_error=False, error_message=None))` closes it. **`completion` is optional and
+  nothing fails when it is missing, but the span then records no output.** Pass
+  the model's reply here rather than writing it separately.
+- `start_tool(ToolStart(name, args_json=None))` opens an `execute_tool` span.
+  `name` is required.
+- `end_tool(span, ToolEnd(result=None, is_error=False, error_message=None))`
+  closes it.
+
 Two more setters apply to a custom span, both from `neosigma.spans`.
 `set_token_usage(span, usage)` attaches token counts, which `end_chat()` takes
 as an argument instead. `set_correlation(span, *, turn_id="", distinct_id="",
