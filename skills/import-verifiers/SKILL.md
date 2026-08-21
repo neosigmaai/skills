@@ -31,6 +31,10 @@ one production trace, with no access to source code or runtime state.
    files exist in the commit passed as `sourceCommit`. If the current workflow
    does not authorize a commit, write and validate the files, then tell the user
    they must commit them before syncing.
+6. **Keep the complete set within 200 files.** The sync API cannot apply a set
+   with more than 200 verifier files, and splitting a set across calls disables
+   omitted files. Stop before writing when the existing files plus the selected
+   imports would exceed 200, and report that the repository set is unsupported.
 
 ## Authoring format
 
@@ -70,22 +74,26 @@ slug to an individual verifier file. Shared defaults belong in
    `*scorer*`, or `*grader*`.
 3. **Classify each check.** Import it when one trace contains enough evidence to
    evaluate its intent. Otherwise skip it and record a one-line reason.
-4. **Write the files.** Create or preserve the config, then add one verifier YAML
+4. **Preflight the set size.** Count the existing files plus the selected new
+   verifier files. If the complete set would exceed 200 files, stop before
+   writing and report the unsupported case. Never split the set across calls.
+5. **Write the files.** Create or preserve the config, then add one verifier YAML
    file per imported condition. Never delete an existing file merely because it
    was not discovered during this scan.
-5. **Validate the set.** Confirm every path is directly under
+6. **Validate the set.** Confirm every path is directly under
    `.neosigma/verifiers/`, every filename ends in `.yaml`, the YAML parses,
    and every prompt states both pass and fail behavior.
-6. **Commit through the repository's normal workflow.** Resolve
-   `sourceRepo` from the origin remote and `sourceCommit` from the commit that
-   contains the generated files.
-7. **Apply once.** Call `sync_verifiers` with:
+7. **Commit only when explicitly authorized.** When the user authorized a
+   commit, use the repository's normal workflow, then resolve `sourceRepo` from
+   the origin remote and `sourceCommit` from the commit containing the generated
+   files. Otherwise, stop after validation and ask the user to commit the files.
+8. **Apply once.** Call `sync_verifiers` with:
    - `sourceRepo`: the repository's `owner/name`.
    - `sourceCommit`: the 7-40 character commit SHA containing the files.
    - `config`: the complete text of `.neosigma/config.yaml`.
    - `files`: every `.neosigma/verifiers/*.yaml` file, with paths relative
      to `.neosigma/`, such as `verifiers/answers-the-question.yaml`.
-8. **Report the result.** List imported and skipped checks, the sync counts, and
+9. **Report the result.** List imported and skipped checks, the sync counts, and
    every returned authoring error. Do not report success unless the sync call
    succeeds.
 
@@ -104,8 +112,9 @@ Report:
 **Trace-evaluable checks.** A support agent suite checks whether responses answer
 the question, stay grounded in supplied context, remain concise, and avoid
 exposing personal information. Write four verifier files, preserve every
-existing file, commit the set, then send the complete set in one
-`sync_verifiers` call.
+existing file, and validate the set. When the user authorized a commit, commit
+and send the complete set in one `sync_verifiers` call. Otherwise, stop and ask
+them to commit the files before syncing.
 
 **Mechanical checks.** A test asserts an exact response ID, latency below 500
 milliseconds, and an internal cache size. Skip all three because one trace
