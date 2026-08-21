@@ -27,10 +27,11 @@ one production trace, with no access to source code or runtime state.
    `.neosigma/config.yaml` and `.neosigma/verifiers/*.yaml` files first. Keep
    existing files unless the user asked to remove them. A sync disables a file
    previously synced from this repository when that file is omitted.
-5. **Keep provenance truthful.** Call `sync_verifiers` only after the generated
-   files exist in the commit passed as `sourceCommit`. If the current workflow
-   does not authorize a commit, write and validate the files, then tell the user
-   they must commit them before syncing.
+5. **Keep provenance truthful and work durable.** Call `sync_verifiers` only
+   after the generated files exist in the commit passed as `sourceCommit`.
+   Before writing files, obtain explicit authorization to commit them in the
+   same turn. If the user does not authorize a commit, stop before writing and
+   ask for authorization; uncommitted clone changes do not survive turns.
 6. **Keep the complete set within 200 files.** The sync API cannot apply a set
    with more than 200 verifier files, and splitting a set across calls disables
    omitted files. Stop before writing when the existing files plus the selected
@@ -77,23 +78,25 @@ slug to an individual verifier file. Shared defaults belong in
 4. **Preflight the set size.** Count the existing files plus the selected new
    verifier files. If the complete set would exceed 200 files, stop before
    writing and report the unsupported case. Never split the set across calls.
-5. **Write the files.** Create or preserve the config, then add one verifier YAML
+5. **Confirm commit authorization.** Before writing, confirm that the user has
+   explicitly authorized committing the generated files. If not, stop and ask
+   for authorization. Do not leave uncommitted generated files for a later turn.
+6. **Write the files.** Create or preserve the config, then add one verifier YAML
    file per imported condition. Never delete an existing file merely because it
    was not discovered during this scan.
-6. **Validate the set.** Confirm every path is directly under
+7. **Validate the set.** Confirm every path is directly under
    `.neosigma/verifiers/`, every filename ends in `.yaml`, the YAML parses,
    and every prompt states both pass and fail behavior.
-7. **Commit only when explicitly authorized.** When the user authorized a
-   commit, use the repository's normal workflow, then resolve `sourceRepo` from
-   the origin remote and `sourceCommit` from the commit containing the generated
-   files. Otherwise, stop after validation and ask the user to commit the files.
-8. **Apply once.** Call `sync_verifiers` with:
+8. **Commit the files.** Use the repository's normal workflow in the same turn,
+   then resolve `sourceRepo` from the origin remote and `sourceCommit` from the
+   commit containing the generated files.
+9. **Apply once.** Call `sync_verifiers` with:
    - `sourceRepo`: the repository's `owner/name`.
    - `sourceCommit`: the 7-40 character commit SHA containing the files.
    - `config`: the complete text of `.neosigma/config.yaml`.
    - `files`: every `.neosigma/verifiers/*.yaml` file, with paths relative
      to `.neosigma/`, such as `verifiers/answers-the-question.yaml`.
-9. **Report the result.** List imported and skipped checks, the sync counts, and
+10. **Report the result.** List imported and skipped checks, the sync counts, and
    every returned authoring error. Do not report success unless the sync call
    succeeds.
 
@@ -112,9 +115,10 @@ Report:
 **Trace-evaluable checks.** A support agent suite checks whether responses answer
 the question, stay grounded in supplied context, remain concise, and avoid
 exposing personal information. Write four verifier files, preserve every
-existing file, and validate the set. When the user authorized a commit, commit
-and send the complete set in one `sync_verifiers` call. Otherwise, stop and ask
-them to commit the files before syncing.
+existing file, and validate the set. First obtain explicit commit authorization;
+if it is not granted, stop before writing. Once authorized, write, validate, and
+commit the files in the same turn, then send the complete set in one
+`sync_verifiers` call.
 
 **Mechanical checks.** A test asserts an exact response ID, latency below 500
 milliseconds, and an internal cache size. Skip all three because one trace
