@@ -10,6 +10,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [integrate-sdk](./skills/integrate-sdk) | Integrate the NeoSigma SDK: agent tracing (Python and TypeScript), product events (Python and TypeScript), framework adapters (Vercel AI SDK, LangChain, Claude Agent SDK, Managed Agents), and dual export with an existing OpenTelemetry setup, correlated per turn. |
 | [import-verifiers](./skills/import-verifiers) | Translate a codebase's trace-evaluable quality checks into repository-backed verifier YAML, then apply the complete set through the NeoSigma MCP sync workflow. |
+| [create-managed-agent](./skills/create-managed-agent) | Create reusable NeoSigma Managed Agents with the Python SDK, then run and monitor their sessions. |
 
 ## Installation
 
@@ -80,3 +81,4 @@ Once installed, your agent can use these skills when you ask it to:
 - Dual-export to NeoSigma alongside an existing OpenTelemetry backend
 - Verify that traces and events reached NeoSigma
 - Import existing trace-evaluable quality checks as repository-backed verifier YAML
+- Create, run, and monitor a NeoSigma Managed Agent with the Python SDK

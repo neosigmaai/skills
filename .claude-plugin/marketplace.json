@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "neosigma-skills",
   "version": "1.0.0",
-  "description": "NeoSigma skills for instrumenting agents with the NeoSigma SDK (agent tracing and product events) and importing existing checks into NeoSigma as verifiers.",
+  "description": "NeoSigma skills for instrumenting agents, creating Managed Agents with the Python SDK, and importing existing checks into NeoSigma as verifiers.",
   "owner": {
     "name": "NeoSigma",
     "email": "founders@neosigma.ai"
@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "neosigma",
-      "description": "Skills for integrating the NeoSigma SDK (agent tracing in Python and TypeScript, framework adapters, product events) and importing a codebase's existing checks into NeoSigma as verifiers.",
+      "description": "Skills for integrating the NeoSigma SDK, creating Managed Agents with the Python SDK, and importing a codebase's existing checks into NeoSigma as verifiers.",
       "version": "1.0.0",
       "source": "./",
       "category": "developer-tools"

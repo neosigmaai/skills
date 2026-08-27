@@ -2,7 +2,7 @@
   "name": "neosigma",
   "displayName": "NeoSigma",
   "version": "1.0.0",
-  "description": "Skills for integrating the NeoSigma SDK (agent tracing in Python and TypeScript, framework adapters, product events, dual export) and importing a codebase's existing checks into NeoSigma as verifiers, following NeoSigma best practices.",
+  "description": "Skills for integrating the NeoSigma SDK, creating Managed Agents with the Python SDK, and importing a codebase's existing checks into NeoSigma as verifiers, following NeoSigma best practices.",
   "author": {
     "name": "NeoSigma",
     "email": "founders@neosigma.ai"
