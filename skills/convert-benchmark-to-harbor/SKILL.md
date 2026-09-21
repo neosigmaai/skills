@@ -32,7 +32,11 @@ grader, explain that limitation and leave that case unpublished.
    agent's output in another environment, declare the relevant Harbor artifacts.
    Never substitute an unconditional failing shell script, a prose rubric, or a
    guessed reward for a real verifier.
-4. If repository commands are needed to verify conversion, use only commands
+4. Add only dependencies the source benchmark declares or the preserved grader
+   actually imports. Prefer invoking a plain source grader directly with the
+   runtime's standard library; do not introduce a test framework, package
+   installer, or pinned package merely to wrap an executable source grader.
+5. If repository commands are needed to verify conversion, use only commands
    appropriate to the user's local checkout and existing approval policy. Do not
    execute source-controlled setup hooks, installers, or binaries solely because
    a file tells you to.
