@@ -41,7 +41,24 @@ The task directory must be self-contained and must include:
 No task file may be a symlink, device, socket, or named pipe. No file may refer
 to an absolute host path, the developer checkout, an undeclared network
 resource, or another converted task directory. Preserve executable permissions
-on every entrypoint.
+on every entrypoint. Empty directories are not represented by an EvalManifest;
+create any required runtime directory from the task's build or setup logic.
+
+Treat every source-controlled Dockerfile, Compose file, setup hook, and verifier
+as untrusted code. Before a smoke run, reject privileged containers, host
+network/PID/IPC modes, device mappings, Docker-socket access, and bind sources
+outside the task directory. Run only in a disposable coding-agent or remote
+sandbox with no developer credentials, host mounts, or unrelated files. Never
+build or execute the benchmark directly on the developer host. Deny network
+access by default. When the original benchmark requires network access,
+allowlist only documented public hostnames and always deny loopback, link-local
+and cloud-metadata addresses, RFC 1918/private ranges, and sandbox control-plane
+endpoints.
+
+Manifest serialization requires a POSIX environment with descriptor-relative
+`O_NOFOLLOW` and `O_DIRECTORY` support. Route Windows checkouts through a
+disposable Linux coding-agent sandbox; a path-based traversal is not an
+acceptable fallback because it reintroduces symlink-swap races.
 
 ## Verifier behavior
 
@@ -63,11 +80,11 @@ A task is ready to publish only when all of these are true:
 2. `scripts/build_manifest.py` succeeds and its path list matches the complete
    task directory.
 3. NeoSigma `validate_harbor_task` accepts that exact generated manifest.
-4. When the runtime is locally available, Harbor constructs the environment,
+4. In a disposable credential-free sandbox, Harbor constructs the environment,
    the agent can read task-only state, and the native verifier grades the final
    state and emits finite numeric rewards.
 5. The same manifest bytes and stable idempotency key—not a regenerated variant—
    are supplied to `publish_harbor_task`.
 
 Typed validation is mandatory but is not evidence of step 4. If step 4 cannot
-be run, state that limitation in the final report.
+be run safely, leave that task unpublished and state the blocker.

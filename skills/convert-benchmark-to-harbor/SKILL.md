@@ -66,6 +66,12 @@ The output contains every regular file as a canonical relative POSIX path with
 its exact base64-encoded bytes, media type, and executable flag. Review the
 listed paths against the contract before sending it to NeoSigma.
 
+Run the serializer in a POSIX coding-agent environment. Its descriptor-based
+traversal deliberately requires `O_NOFOLLOW` and `O_DIRECTORY` so a path cannot
+be swapped to a symlink between validation and reading. On Windows, move the
+checkout into a disposable Linux coding-agent sandbox; do not replace the
+serializer with a path-based copy loop.
+
 1. Call `validate_harbor_task` for every generated manifest. This calls the same typed
    limits and Harbor parser used by publication and creates no GCS objects,
    datasets, or task rows.
@@ -75,14 +81,21 @@ listed paths against the contract before sending it to NeoSigma.
    unbounded retry loop. After three materially different failed attempts for a
    task, stop and report the Harbor contract blocker plus the local paths that
    need a human decision.
-3. After typed validation, execute the task through Harbor locally when the
-   benchmark runtime is available. Confirm that an agent can access at least one
-   task-owned input or dependency, that the verifier observes the resulting
-   environment state, and that it writes finite numeric rewards. If local Harbor
-   execution is unavailable, report that execution remains unverified; do not
-   describe typed validation alone as an end-to-end pass.
-4. Do not publish a task until it validates. A successful validation proves file
-   structure and Harbor parsing; it does not prove an invented grader is useful.
+3. After typed validation, smoke-run every converted task through Harbor in a
+   disposable coding-agent or remote sandbox. The sandbox must contain no
+   developer credentials, host mounts, Docker socket, or unrelated checkout
+   files. Deny network access by default. If the source benchmark genuinely
+   requires network access, allowlist only its documented public hostnames and
+   always block loopback, link-local and cloud-metadata addresses, private
+   network ranges, and sandbox control-plane endpoints. Reject task definitions that request privileged containers, host
+   network/PID/IPC modes, devices, or bind sources outside the task. Confirm the
+   agent can access task-owned state, the verifier observes final environment
+   state, and finite numeric rewards are emitted. Never build or execute an
+   untrusted benchmark directly on the developer host.
+4. Do not publish a converted task unless both typed validation and the sandboxed
+   Harbor smoke run succeed. If a suitable sandbox is unavailable, leave the
+   task unpublished and report the blocker. Structural validation alone is not
+   an end-to-end pass.
 
 ## Create and publish
 
