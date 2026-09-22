@@ -16,6 +16,14 @@ invent a verifier, expected output, fixture, dependency, reward, or task merely
 to make a Harbor-shaped directory. If the source has no sufficiently specified
 grader, explain that limitation and leave that case unpublished.
 
+Before converting anything, read
+[`references/harbor-task-contract.md`](references/harbor-task-contract.md). Use
+its source-to-Harbor mapping and completion gate for every task. Do not add
+benchmark-name conditionals: derive the conversion only from files and metadata
+in the checked-out benchmark. Inspect only that checkout, this skill, and the
+installed Harbor CLI/API; do not search unrelated local repositories or reuse
+previously converted task artifacts as implementation guidance.
+
 ## Build faithful local tasks
 
 1. Inspect the benchmark's documentation and task definitions. Determine which
@@ -26,7 +34,9 @@ grader, explain that limitation and leave that case unpublished.
    workspace. Include `task.toml`, non-empty instructions, the complete
    environment build context or declared image marker, every input/fixture the
    task needs, and the source-derived verifier under Harbor's expected `tests/`
-   layout. Preserve executable modes.
+   layout. Preserve executable modes. Copy source-controlled inputs; do not
+   reference files outside the task directory or depend on the original
+   checkout remaining available at run time.
 3. Make the verifier evaluate the final task state and write the source-defined
    numeric rewards to Harbor's verifier reward output. When the task needs the
    agent's output in another environment, declare the relevant Harbor artifacts.
@@ -43,11 +53,20 @@ grader, explain that limitation and leave that case unpublished.
 
 ## Validate before publishing
 
-Use the NeoSigma MCP tools with an `EvalManifest` that contains the task's
-relative files, byte content, media types, executable flags, and stable
-`source_task_id`.
+Build the `EvalManifest` with the bundled deterministic serializer; do not
+manually transcribe or base64-encode files:
 
-1. Call `validate_harbor_task` for every manifest. This calls the same typed
+```bash
+python3 <skill-directory>/scripts/build_manifest.py \
+  <task-directory> --source-task-id <source-task-id> \
+  --output <manifest.json>
+```
+
+The output contains every regular file as a canonical relative POSIX path with
+its exact base64-encoded bytes, media type, and executable flag. Review the
+listed paths against the contract before sending it to NeoSigma.
+
+1. Call `validate_harbor_task` for every generated manifest. This calls the same typed
    limits and Harbor parser used by publication and creates no GCS objects,
    datasets, or task rows.
 2. Correct a failed validation from the local task directory, then validate
@@ -56,7 +75,13 @@ relative files, byte content, media types, executable flags, and stable
    unbounded retry loop. After three materially different failed attempts for a
    task, stop and report the Harbor contract blocker plus the local paths that
    need a human decision.
-3. Do not publish a task until it validates. A successful validation proves file
+3. After typed validation, execute the task through Harbor locally when the
+   benchmark runtime is available. Confirm that an agent can access at least one
+   task-owned input or dependency, that the verifier observes the resulting
+   environment state, and that it writes finite numeric rewards. If local Harbor
+   execution is unavailable, report that execution remains unverified; do not
+   describe typed validation alone as an end-to-end pass.
+4. Do not publish a task until it validates. A successful validation proves file
    structure and Harbor parsing; it does not prove an invented grader is useful.
 
 ## Create and publish
