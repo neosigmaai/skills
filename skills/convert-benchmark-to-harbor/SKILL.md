@@ -30,17 +30,31 @@ previously converted task artifacts as implementation guidance.
    tasks the user requested and whether the source already contains native Harbor
    tasks. Preserve native Harbor files byte-for-byte where possible rather than
    translating them.
-2. For a non-native task, create a self-contained Harbor task directory in the
-   workspace. Include `task.toml`, non-empty instructions, the complete
-   environment build context or declared image marker, every input/fixture the
-   task needs, and the source-derived verifier under Harbor's expected `tests/`
-   layout. Preserve executable modes. Copy source-controlled inputs; do not
-   reference files outside the task directory or depend on the original
+2. For a non-native task, scaffold it with the installed Harbor CLI —
+   `harbor init <org>/<task-name> --task` — and build inside that scaffold.
+   Do not hand-write `task.toml` or guess its schema: the scaffold is the only
+   source of truth for field names, and it is the same for every benchmark.
+   Fill in `instruction.md`, `environment/Dockerfile`, `tests/test.sh` (the
+   verifier entrypoint Harbor actually invokes), and `solution/solve.sh` (the
+   reference solution used to smoke-test the task) with content derived from
+   the source benchmark. See
+   [`references/harbor-task-contract.md`](references/harbor-task-contract.md#reward-output-contract)
+   for the reward-output contract the scaffolded `tests/test.sh` already
+   implements. Preserve executable modes. Copy source-controlled inputs; do
+   not reference files outside the task directory or depend on the original
    checkout remaining available at run time.
-3. Make the verifier evaluate the final task state and write the source-defined
-   numeric rewards to Harbor's verifier reward output. When the task needs the
-   agent's output in another environment, declare the relevant Harbor artifacts.
-   Never substitute an unconditional failing shell script, a prose rubric, or a
+3. Make the verifier (`tests/test.sh`, plus whatever it invokes) evaluate the
+   final task state and write the exact reward the source benchmark's own
+   grader produces — this is `0`/`1` for a pass/fail benchmark like HumanEval,
+   but many benchmarks grade on a continuous scale, emit several named
+   metrics, or otherwise don't reduce to a boolean; preserve whatever the
+   source actually computes, do not force it into pass/fail. Write it as a
+   finite JSON number (or numbers) to `/logs/verifier/reward.txt` (or
+   `/logs/verifier/reward.json`) exactly as the scaffold's `tests/test.sh`
+   does — see the reward-output contract linked above for the exact
+   mechanics, not the value. When the task needs the agent's output in
+   another environment, declare the relevant Harbor artifacts. Never
+   substitute an unconditional failing shell script, a prose rubric, or a
    guessed reward for a real verifier.
 4. Add only dependencies the source benchmark declares or the preserved grader
    actually imports. Prefer invoking a plain source grader directly with the

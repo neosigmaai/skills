@@ -23,9 +23,20 @@ judge that the source benchmark did not use.
 
 ## Required task contents
 
+Generate the task directory with `harbor init <org>/<task-name> --task`
+(the installed Harbor CLI) and build inside that scaffold. `task.toml`'s
+schema — `[task]`, `[environment]` (including its `network_mode`, one of
+`"no-network"`, `"public"`, or `"allowlist"` — never invent another value),
+`[agent]`, `[verifier]`, `[solution.env]` — is Harbor's own contract, not
+this skill's; do not hand-write it or guess field names from first
+principles, and do not reuse a schema recalled from outside this scaffold.
+The scaffold's `tests/test.sh` and `solution/solve.sh` are the correct
+entrypoint locations — keep them, filling in their bodies from the source.
+
 The task directory must be self-contained and must include:
 
-- `task.toml` with a stable task name and a valid agent environment definition;
+- `task.toml`, generated (not hand-written) as above, with a stable task
+  name and a valid agent environment definition;
 - non-empty Harbor instructions (`instruction.md`, or the instruction files
   required by declared Harbor steps);
 - `environment/` plus its complete build/runtime context, unless `task.toml`
@@ -63,13 +74,29 @@ acceptable fallback because it reintroduces symlink-swap races.
 ## Verifier behavior
 
 The verifier must exercise the original grader semantics against final task
-state. It must write every source-defined reward as a finite JSON number to the
-Harbor reward output location expected by the selected Harbor task format. It
-must fail clearly when required output is absent or malformed. Do not award a
-constant result and do not silently turn grader errors into a score.
+state. It must write every source-defined reward — whatever shape the source
+benchmark actually produces: `0`/`1`, a continuous score, several named
+metrics — as a finite JSON number (or numbers) to the reward-output location
+below. It must fail clearly when required output is absent or malformed. Do
+not award a constant result, do not silently turn grader errors into a score,
+and do not collapse a non-binary source reward into pass/fail merely to
+simplify the wrapper.
 
 Wrapping a source grader is preferred to rewriting it. Any wrapper must only
 adapt paths, invocation, and reward serialization; it must not change scoring.
+
+### Reward-output contract
+
+Write the finite JSON reward to `/logs/verifier/reward.txt` (a bare JSON
+number, e.g. `1` or `0.73`) or `/logs/verifier/reward.json` (a JSON number or
+object of named rewards). This is Harbor's own convention, not a NeoSigma
+one — the scaffold's `tests/test.sh` already writes to this exact location;
+keep that, do not invent a different path or filename (a wrapper that writes
+`reward.json` next to the verifier script instead, for example, will make
+Harbor raise `RewardFileNotFoundError` and the task will never actually
+grade, even though the wrapper logic itself may be correct). Exit `0` from
+`tests/test.sh` regardless of the reward's value — the reward file, not the
+exit code, is what Harbor reads as the trial's score.
 
 ## Completion gate
 
