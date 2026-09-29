@@ -1,6 +1,6 @@
 # NeoSigma Skills
 
-[Agent Skills](https://github.com/anthropics/skills) that teach AI coding assistants how to work with [NeoSigma](https://neosigma.ai): instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, and evaluate Clay on GTM Bench.
+The NeoSigma plugin for AI coding agents. It connects your agent to the [NeoSigma](https://neosigma.ai) MCP server and adds [Agent Skills](https://github.com/anthropics/skills) that teach the agent how to work with NeoSigma: instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, convert benchmarks into Harbor tasks, and evaluate Clay on GTM Bench.
 
 Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 
@@ -13,18 +13,63 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [clay-plugin-eval](./skills/clay-plugin-eval) | Set up Clay credentials in a NeoSigma Vault, run the fixed GTM Bench dataset with and without the Clay plugin, and generate a comparison report. |
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
 
+## What the plugin includes
+
+- **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, traces, issues, datasets, evaluation runs, and verifiers, and to start evaluation runs.
+- **Skills**: the skills in the table above.
+
+## API key
+
+The MCP server needs a NeoSigma API key. Create an `ns_live_...` key in NeoSigma under **Settings > Developer > API Keys**.
+
 ## Installation
 
-### Use your coding agent
+### Claude Code
 
-Use your coding agent with this instruction so it can install the NeoSigma
-skill and apply it to your task.
+Run these commands inside Claude Code:
 
-```txt
-Install the integrate-sdk skill from github.com/neosigmaai/skills
-and use it to add NeoSigma tracing to this application
-following NeoSigma best practices.
 ```
+/plugin marketplace add neosigmaai/skills
+/plugin install neosigma@neosigma-skills
+```
+
+Enter your API key when Claude Code asks for it. Claude Code keeps the key in secure storage.
+
+If you install from a terminal with `claude plugin install`, Claude Code does not ask for the key. Set it inside Claude Code:
+
+```
+/plugin configure neosigma@neosigma-skills
+```
+
+To make sure that the plugin works, run `/mcp` and look for `neosigma`.
+
+### Codex
+
+1. Set the `NEOSIGMA_API_KEY` environment variable to your API key.
+
+   macOS and Linux:
+
+   ```bash
+   export NEOSIGMA_API_KEY=ns_live_...
+   ```
+
+   Windows (PowerShell). The variable is available only in new terminal windows:
+
+   ```powershell
+   setx NEOSIGMA_API_KEY "ns_live_..."
+   ```
+
+2. Add the marketplace:
+
+   ```bash
+   codex plugin marketplace add neosigmaai/skills
+   ```
+
+3. Start Codex, run `/plugins`, and install **neosigma**.
+
+If you set or change the key while Codex runs, fully stop Codex before you start it again. Codex keeps a background process that does not see new environment variables.
+
+To make sure that the plugin works, run `/mcp` and look for `neosigma`.
 
 ### Cursor
 
@@ -34,46 +79,43 @@ Install as a [Cursor plugin](https://cursor.com/docs/plugins):
 /add-plugin neosigma
 ```
 
-Or via the skills CLI:
+The skills work in Cursor. The NeoSigma MCP server does not authenticate in Cursor yet. To use the MCP tools in Cursor, add the server to your Cursor MCP settings with the header `Authorization: Bearer <your API key>`.
 
-```bash
-npx skills add neosigmaai/skills --skill "integrate-sdk" --agent cursor
-```
+### Skills only
 
-### Claude Code
-
-Add the marketplace and install:
-
-```bash
-claude plugin marketplace add neosigmaai/skills
-claude plugin install neosigma@neosigma-skills
-```
-
-Or via the skills CLI:
-
-```bash
-npx skills add neosigmaai/skills --skill "integrate-sdk" --agent claude-code
-```
-
-### Install with npx
+To install one skill without the MCP server, use the skills CLI:
 
 ```bash
 npx skills add neosigmaai/skills --skill "integrate-sdk"
 ```
 
-## Prerequisites
+Add `--agent cursor` or `--agent claude-code` to select the agent.
 
-Set your NeoSigma API key before asking an agent to instrument your codebase. Generate an `ns_live_...` key in Settings > Developer > API Keys.
+### Use your coding agent
+
+You can also tell your coding agent to install a skill and use it:
+
+```txt
+Install the integrate-sdk skill from github.com/neosigmaai/skills
+and use it to add NeoSigma tracing to this application
+following NeoSigma best practices.
+```
+
+## SDK prerequisites
+
+The SDK reads the same API key from `NEOSIGMA_API_KEY`:
 
 ```bash
-export NEOSIGMA_API_KEY=...
+export NEOSIGMA_API_KEY=ns_live_...
 ```
 
 Without a key the SDK is a no-op, so instrumentation is safe to merge before keys are provisioned.
 
 ## Usage
 
-Once installed, your agent can use these skills when you ask it to:
+Once installed, your agent can use the MCP tools and skills when you ask it to:
+
+- Show the open issues in a NeoSigma workspace, or read a trace
 
 - Add NeoSigma tracing to a Python or TypeScript/Node agent or workflow
 - Trace the Vercel AI SDK or LangChain, the Claude Agent SDK, or Anthropic Managed Agents
