@@ -71,6 +71,22 @@ If you set or change the key while Codex runs, fully stop Codex before you start
 
 To make sure that the plugin works, run `/mcp` and look for `neosigma`.
 
+### Pi
+
+Requires Pi 0.99.0 or later, which added built-in MCP support. Check with `pi --version`.
+
+1. Set the `NEOSIGMA_API_KEY` environment variable to your API key, as in the Codex steps above.
+
+2. Install the package:
+
+   ```bash
+   pi install git:github.com/neosigmaai/skills
+   ```
+
+3. Start Pi. If Pi is already running, run `/reload`.
+
+The package adds the skills and registers the NeoSigma MCP server, which reads the key from `NEOSIGMA_API_KEY` each time Pi connects. To make sure that the plugin works, run `/mcp` and look for `neosigma`. If you use `pi-mcp-adapter` or another MCP extension, it replaces Pi's built-in MCP support; remove it to use this package's MCP connection.
+
 ### Cursor
 
 Install as a [Cursor plugin](https://cursor.com/docs/plugins):

@@ -1,0 +1,17 @@
+{
+  "name": "@neosigma/pi-plugin",
+  "version": "1.1.0",
+  "private": true,
+  "description": "NeoSigma skills and MCP tools for Pi: integrate the NeoSigma SDK, import verifiers, convert benchmarks into Harbor tasks, evaluate the Clay plugin, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
+  "keywords": ["pi-package", "neosigma", "mcp", "evals", "tracing"],
+  "license": "MIT",
+  "repository": "https://github.com/neosigmaai/skills",
+  "type": "module",
+  "pi": {
+    "extensions": ["./.pi-plugin/neosigma.ts"],
+    "skills": ["./skills"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
