@@ -1,7 +1,7 @@
 {
   "name": "neosigma",
-  "description": "Skills for integrating the NeoSigma SDK (agent tracing in Python and TypeScript, framework adapters, product events, dual export) and importing a codebase's existing checks into NeoSigma as verifiers, following NeoSigma best practices.",
-  "version": "1.0.0",
+  "description": "NeoSigma skills and MCP tools for coding agents: integrate the NeoSigma SDK (agent tracing and product events), import a codebase's existing checks as verifiers, convert benchmarks into Harbor tasks, evaluate the Clay plugin, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
+  "version": "1.1.0",
   "author": {
     "name": "NeoSigma",
     "email": "founders@neosigma.ai"
@@ -19,6 +19,17 @@
     "agents",
     "sdk",
     "verifiers",
-    "evals"
-  ]
+    "evals",
+    "mcp",
+    "harbor"
+  ],
+  "userConfig": {
+    "api_key": {
+      "type": "string",
+      "title": "NeoSigma API key",
+      "description": "Your ns_live_ API key. Create one in NeoSigma under Settings > Developer > API Keys.",
+      "sensitive": true,
+      "required": true
+    }
+  }
 }

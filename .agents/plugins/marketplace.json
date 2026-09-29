@@ -1,0 +1,20 @@
+{
+  "name": "neosigma-skills",
+  "interface": {
+    "displayName": "NeoSigma"
+  },
+  "plugins": [
+    {
+      "name": "neosigma",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
