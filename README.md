@@ -77,15 +77,23 @@ Requires Pi 0.99.0 or later, which added built-in MCP support. Check with `pi --
 
 1. Set the `NEOSIGMA_API_KEY` environment variable to your API key, as in the Codex steps above.
 
-2. Install the package:
+2. Install the skills:
 
    ```bash
    pi install git:github.com/neosigmaai/skills
    ```
 
-3. Start Pi. If Pi is already running, run `/reload`.
+3. Add the NeoSigma MCP server:
 
-The package adds the skills and registers the NeoSigma MCP server, which reads the key from `NEOSIGMA_API_KEY` each time Pi connects. To make sure that the plugin works, run `/mcp` and look for `neosigma`. If you use `pi-mcp-adapter` or another MCP extension, it replaces Pi's built-in MCP support; remove it to use this package's MCP connection.
+   ```bash
+   pi mcp add neosigma --url https://api.neosigma.ai/mcp --bearer-token-env-var NEOSIGMA_API_KEY --exposure direct
+   ```
+
+   Pi saves the server in `~/.pi/agent/mcp.json` and reads the key from `NEOSIGMA_API_KEY` each time it connects, so the key is not written to disk.
+
+4. Start Pi. If Pi is already running, run `/reload`.
+
+To make sure that the plugin works, run `/mcp` and look for `neosigma`. If you use `pi-mcp-adapter` or another MCP extension, it replaces Pi's built-in MCP support; remove it to use this setup.
 
 ### Cursor
 
