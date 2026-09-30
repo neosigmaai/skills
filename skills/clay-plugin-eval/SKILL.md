@@ -9,7 +9,7 @@ Set up one user's Clay access, run selected tasks with the Clay plugin, and retu
 
 ## Defaults
 
-- Dataset ID: `2ea88908-b577-4df5-814c-4f6a8ebd5ee8` (fixed)
+- Dataset ID: `38bdc6cb-a255-44ff-91be-32a8170fe557` (fixed)
 - Project ID: `129f3404-2f7f-4df8-9fcc-0164ffe92d73`
 - Environment ID: `00b9da33-0bd2-440f-a740-6098200e5721`
 - Harness: `codex`
@@ -22,7 +22,7 @@ After resolving overrides, use these shell variables in one persistent terminal 
 ```bash
 NEOSIGMA_PROJECT_ID="129f3404-2f7f-4df8-9fcc-0164ffe92d73"
 NEOSIGMA_ENVIRONMENT_ID="00b9da33-0bd2-440f-a740-6098200e5721"
-NEOSIGMA_DATASET_ID="2ea88908-b577-4df5-814c-4f6a8ebd5ee8"
+NEOSIGMA_DATASET_ID="38bdc6cb-a255-44ff-91be-32a8170fe557"
 NEOSIGMA_HARNESS="codex"
 NEOSIGMA_MODEL="gpt-5.6-sol"
 ```
