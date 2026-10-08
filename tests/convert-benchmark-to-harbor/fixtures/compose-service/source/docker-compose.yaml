@@ -1,0 +1,13 @@
+services:
+  main:
+    depends_on:
+      ledger:
+        condition: service_healthy
+  ledger:
+    build:
+      context: ./ledger
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 2s
+      timeout: 5s
+      retries: 15

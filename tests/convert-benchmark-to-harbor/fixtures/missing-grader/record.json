@@ -1,0 +1,64 @@
+{
+  "record_version": 1,
+  "skill_bundle_digest": "sha256:dd71767436ec570ce03e456d9e584aa57b2e6541960a1438910179a2612482a1",
+  "status": "blocked",
+  "source": {
+    "repository": "https://github.com/neosigmaai/skills",
+    "revision": "fixture-v1",
+    "dataset": "fixtures/missing-grader",
+    "split": "test",
+    "task_id": "tasks.jsonl#s-1",
+    "definition": "source/tasks.jsonl line 1"
+  },
+  "mapping": {
+    "instruction": {
+      "source": "README.md + tasks.jsonl",
+      "transform": "verbatim"
+    },
+    "inputs": [],
+    "interaction": [
+      "final_answer_file"
+    ],
+    "environment": {
+      "definition": "not converted",
+      "base_images": [
+        {
+          "reference": "none",
+          "pinned": false,
+          "note": "mutable tag kept from source; digest recorded at smoke time"
+        }
+      ],
+      "dependencies": [],
+      "services": [],
+      "user": null,
+      "workdir": "/app",
+      "network": "no-network",
+      "resources": {},
+      "timeouts": {}
+    },
+    "tools": [],
+    "credentials": [],
+    "grader": {
+      "source": "not in source",
+      "invocation": "hosted maintainer service",
+      "reads": [
+        "summary.txt"
+      ],
+      "dependencies": [],
+      "model": null,
+      "rewards": [],
+      "failure_signal": "unknown",
+      "aggregation": "unknown",
+      "termination": "single turn"
+    },
+    "external_assets": []
+  },
+  "blockers": [
+    {
+      "category": "fidelity",
+      "code": "grader_missing",
+      "detail": "Scores come from a hosted maintainer service that is not in the checkout. No grader code, rubric, metric definition or reference outputs exist in the source.",
+      "recommendation": "Leave unpublished. Ask the user for the source grader or its exact specification; do not substitute an LLM judge, a rubric or a constant reward."
+    }
+  ]
+}

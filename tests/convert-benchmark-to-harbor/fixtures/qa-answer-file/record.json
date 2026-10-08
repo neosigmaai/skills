@@ -1,0 +1,126 @@
+{
+  "record_version": 1,
+  "skill_bundle_digest": "sha256:dd71767436ec570ce03e456d9e584aa57b2e6541960a1438910179a2612482a1",
+  "status": "ready",
+  "source": {
+    "repository": "https://github.com/neosigmaai/skills",
+    "revision": "fixture-v1",
+    "dataset": "fixtures/qa-answer-file",
+    "split": "test",
+    "task_id": "data/test.jsonl#q-017",
+    "definition": "source/data/test.jsonl line 1"
+  },
+  "mapping": {
+    "instruction": {
+      "source": "README.md harness prompt + data/test.jsonl question",
+      "transform": "harness template filled with the question"
+    },
+    "inputs": [
+      {
+        "source": "data/test.jsonl answer",
+        "task_path": "tests/gold.json",
+        "visible_to": "verifier"
+      }
+    ],
+    "interaction": [
+      "final_answer_file"
+    ],
+    "environment": {
+      "definition": "environment/Dockerfile (Python 3.12 working directory /app)",
+      "base_images": [
+        {
+          "reference": "python:3.12-slim",
+          "pinned": false,
+          "note": "mutable tag kept from source; digest recorded at smoke time"
+        }
+      ],
+      "dependencies": [],
+      "services": [],
+      "user": null,
+      "workdir": "/app",
+      "network": "no-network",
+      "resources": {},
+      "timeouts": {
+        "agent_sec": 300,
+        "verifier_sec": 60
+      }
+    },
+    "tools": [],
+    "credentials": [],
+    "grader": {
+      "source": "eval.py",
+      "invocation": "python3 eval.py /app/answer.txt <gold>",
+      "reads": [
+        "/app/answer.txt"
+      ],
+      "dependencies": [],
+      "model": null,
+      "rewards": [
+        {
+          "name": "exact_match",
+          "range": [
+            0,
+            1
+          ],
+          "meaning": "normalized exact match"
+        }
+      ],
+      "failure_signal": "grader exits nonzero; a missing answer file is a legitimate 0 per source",
+      "aggregation": "mean exact_match over the test split",
+      "termination": "single turn"
+    },
+    "external_assets": []
+  },
+  "blockers": [],
+  "validation": {
+    "manifest_digest": "sha256:b00bd43fdac9e708bf9cc1d39882d63f70de8246f51a329abf1710d41414d416",
+    "local_check": {
+      "ok": true,
+      "harbor_version": "0.20.0"
+    },
+    "service_validation": {
+      "digest": "sha256:b00bd43fdac9e708bf9cc1d39882d63f70de8246f51a329abf1710d41414d416",
+      "how": "neosigma_agents.api.dataset_import.validate_harbor_task_manifest from neosigma origin/main 45b35383 run locally with default limits; not the deployed endpoint"
+    },
+    "smoke": {
+      "materialized_digest": "sha256:b00bd43fdac9e708bf9cc1d39882d63f70de8246f51a329abf1710d41414d416",
+      "runtime": "Harbor 0.20.0 docker environment in the Colima VM 'skill-fixtures' (only host mount: the run directory); Harbor ran with a scrubbed environment (no API keys, empty Docker config, HOME inside the run directory)",
+      "controls": [
+        {
+          "name": "passing",
+          "job": "passing",
+          "agent": "oracle",
+          "outcome": "graded",
+          "rewards": {
+            "exact_match": 1.0
+          },
+          "source_rewards": {
+            "exact_match": 1.0
+          }
+        },
+        {
+          "name": "failing",
+          "job": "nop",
+          "agent": "nop",
+          "outcome": "graded",
+          "rewards": {
+            "exact_match": 0.0
+          },
+          "source_rewards": {
+            "exact_match": 0.0
+          }
+        },
+        {
+          "name": "broken_grader",
+          "job": "broken",
+          "agent": "nop",
+          "outcome": "reward_file_missing",
+          "rewards": null,
+          "exception_type": "RewardFileNotFoundError"
+        }
+      ],
+      "no_passing_state_reason": null
+    },
+    "fidelity_protocol": "exact"
+  }
+}

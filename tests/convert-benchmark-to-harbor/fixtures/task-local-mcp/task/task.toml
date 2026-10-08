@@ -1,0 +1,24 @@
+schema_version = "1.3"
+
+[task]
+name = "fixture/catalog-price-a17"
+description = "Look up a price with the task's own catalog MCP server."
+
+[metadata]
+source_task_id = "catalog/a-17"
+
+[environment]
+network_mode = "no-network"
+workdir = "/app"
+
+[[environment.mcp_servers]]
+name = "catalog"
+transport = "stdio"
+command = "python3"
+args = ["/opt/tools/catalog_mcp.py"]
+
+[agent]
+timeout_sec = 300.0
+
+[verifier]
+timeout_sec = 60.0

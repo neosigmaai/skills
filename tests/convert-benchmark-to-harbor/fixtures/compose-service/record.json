@@ -1,0 +1,127 @@
+{
+  "record_version": 1,
+  "skill_bundle_digest": "sha256:dd71767436ec570ce03e456d9e584aa57b2e6541960a1438910179a2612482a1",
+  "status": "blocked",
+  "source": {
+    "repository": "https://github.com/neosigmaai/skills",
+    "revision": "fixture-v1",
+    "dataset": "fixtures/compose-service",
+    "split": "test",
+    "task_id": "ledger/inv-9",
+    "definition": "source/README.md + docker-compose.yaml"
+  },
+  "mapping": {
+    "instruction": {
+      "source": "README.md task statement",
+      "transform": "verbatim task statement"
+    },
+    "inputs": [],
+    "interaction": [
+      "files",
+      "tools"
+    ],
+    "environment": {
+      "definition": "environment/docker-compose.yaml + environment/Dockerfile + environment/ledger/",
+      "base_images": [
+        {
+          "reference": "python:3.12-slim",
+          "pinned": false,
+          "note": "mutable tag kept from source; digest recorded at smoke time"
+        }
+      ],
+      "dependencies": [],
+      "services": [
+        {
+          "name": "ledger",
+          "purpose": "task-local HTTP service the agent writes to and the grader reads",
+          "address": "ledger:8080",
+          "healthcheck": "GET /health"
+        }
+      ],
+      "user": null,
+      "workdir": "/app",
+      "network": "no-network",
+      "resources": {},
+      "timeouts": {
+        "agent_sec": 300,
+        "verifier_sec": 60
+      }
+    },
+    "tools": [],
+    "credentials": [],
+    "grader": {
+      "source": "grade.py",
+      "invocation": "python3 grade.py (reads ledger state)",
+      "reads": [
+        "http://ledger:8080/entries"
+      ],
+      "dependencies": [],
+      "model": null,
+      "rewards": [
+        {
+          "name": "recorded",
+          "range": [
+            0,
+            1
+          ],
+          "meaning": "the payment is in the ledger"
+        }
+      ],
+      "failure_signal": "grader exits nonzero (for example the ledger is unreachable)",
+      "aggregation": "mean recorded",
+      "termination": "single turn"
+    },
+    "external_assets": []
+  },
+  "blockers": [
+    {
+      "category": "capability",
+      "code": "compose_service_names_unresolvable_with_egress_control",
+      "detail": "With network_mode = no-network, Harbor 0.20.0's docker environment runs main and ledger in the egress-control sidecar's network namespace, so the source address ledger:8080 does not resolve (URLError: Name or service not known) and no trial can be graded. A control-only copy with network_mode = public graded recorded = 1, which isolates the cause to egress control.",
+      "recommendation": "Leave unpublished. Do not change the source address to localhost or loosen network_mode. Ask the integration owner to confirm Compose service-name resolution under the platform's no-network policy (NEO-2085) and rerun the smoke test there."
+    }
+  ],
+  "validation": {
+    "manifest_digest": "sha256:22cab57aa8432d5649b5f0d4e8e3527700ee2e2a0d2cafd5535d7755f51c95c7",
+    "local_check": {
+      "ok": true,
+      "harbor_version": "0.20.0"
+    },
+    "service_validation": {
+      "digest": "sha256:22cab57aa8432d5649b5f0d4e8e3527700ee2e2a0d2cafd5535d7755f51c95c7",
+      "how": "neosigma_agents.api.dataset_import.validate_harbor_task_manifest from neosigma origin/main 45b35383 run locally with default limits; not the deployed endpoint"
+    },
+    "smoke": {
+      "materialized_digest": "sha256:22cab57aa8432d5649b5f0d4e8e3527700ee2e2a0d2cafd5535d7755f51c95c7",
+      "runtime": "Harbor 0.20.0 docker environment in the Colima VM 'skill-fixtures' (only host mount: the run directory); Harbor ran with a scrubbed environment (no API keys, empty Docker config, HOME inside the run directory)",
+      "controls": [
+        {
+          "name": "passing",
+          "job": "oracle",
+          "agent": "oracle",
+          "outcome": "reward_file_missing",
+          "rewards": null,
+          "exception_type": "RewardFileNotFoundError"
+        },
+        {
+          "name": "failing",
+          "job": "nop",
+          "agent": "nop",
+          "outcome": "reward_file_missing",
+          "rewards": null,
+          "exception_type": "RewardFileNotFoundError"
+        },
+        {
+          "name": "broken_grader",
+          "job": "broken",
+          "agent": "nop",
+          "outcome": "reward_file_missing",
+          "rewards": null,
+          "exception_type": "RewardFileNotFoundError"
+        }
+      ],
+      "no_passing_state_reason": null
+    },
+    "fidelity_protocol": "exact"
+  }
+}

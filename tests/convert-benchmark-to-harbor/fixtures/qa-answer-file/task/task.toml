@@ -1,0 +1,18 @@
+schema_version = "1.3"
+
+[task]
+name = "fixture/short-answer-q-017"
+description = "One short-answer question graded by normalized exact match."
+
+[metadata]
+source_task_id = "data/test.jsonl#q-017"
+
+[environment]
+network_mode = "no-network"
+workdir = "/app"
+
+[agent]
+timeout_sec = 300.0
+
+[verifier]
+timeout_sec = 60.0
