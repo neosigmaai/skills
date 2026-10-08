@@ -1,7 +1,7 @@
 # Harbor task conversion contract
 
 Apply this contract independently to every source task. It describes Harbor
-**0.20.0**, the version the NeoSigma service uses to parse and run tasks. If
+**0.20.0**, the Harbor version NeoSigma supports. If
 `harbor --version` reports another version, install 0.20.0 for checks; do not
 rely on fields or behavior from a newer release.
 
@@ -10,8 +10,7 @@ rely on fields or behavior from a newer release.
 `harbor init <org>/<name> --task` produces a starting point with example
 content. It is not the full schema. The authority is the pinned parser:
 `harbor/models/task/config.py` (`TaskConfig`) and `harbor/models/task/paths.py`
-in the installed package. `check_task.py` runs that parser and adds the checks
-Harbor does not make.
+in the installed package.
 
 Harbor 0.20.0 ignores keys it does not know, so an invented field parses and
 silently does nothing. Never add a field that is not in `TaskConfig`; never
@@ -91,17 +90,31 @@ Harbor reads `/logs/verifier/reward.json` when it exists, and otherwise
   shared verifier, Harbor does not clear `/logs/verifier`, so a stale file or a
   file the agent wrote would otherwise be read as the score.
 - Write the reward file only after the grader finished, through a temporary
-  file and a rename. `scripts/write_reward.py` does this and validates values.
+  file and a rename.
 
-A typical wrapper:
+A typical wrapper, when the verifier image already has Python 3 and the source
+grader prints its result as JSON:
 
 ```sh
 #!/bin/sh
 set -eu
-rm -f /logs/verifier/reward.json /logs/verifier/reward.txt
-python3 /tests/<source-grader> <source arguments> > /logs/verifier/grader-result.json
-python3 /tests/write_reward.py --output /logs/verifier/reward.json \
-  --keys <source reward names> < /logs/verifier/grader-result.json
+out=/logs/verifier
+rm -f "$out/reward.json" "$out/reward.txt"
+python3 /tests/<source-grader> <source arguments> > "$out/grader-result.json"
+python3 - "$out" <source reward names> <<'PY'
+import json, math, os, sys
+out, names = sys.argv[1], sys.argv[2:]
+def reject(constant):
+    raise ValueError(constant)
+result = json.load(open(f"{out}/grader-result.json"), parse_constant=reject)
+rewards = {name: result[name] for name in names}
+for value in rewards.values():
+    if type(value) not in (int, float) or not math.isfinite(value):
+        sys.exit("the grader did not produce finite numeric rewards")
+with open(f"{out}/.reward.json", "w") as stream:
+    json.dump(rewards, stream)
+os.replace(f"{out}/.reward.json", f"{out}/reward.json")
+PY
 ```
 
 If the source grader signals "graded, failed" with a nonzero exit status (for
@@ -112,16 +125,15 @@ defines.
 For multi-step tasks, each step writes its own rewards. `min_reward` reproduces
 a source stop rule; `multi_step_reward_strategy` reproduces how the source
 combines turns. If the source combines turns in another way, record a
-`capability` blocker. Dataset aggregation (mean, pass@k, weighting, repeats,
+**capability** blocker. Dataset aggregation (mean, pass@k, weighting, repeats,
 seeds) is not a task field: record it in the task's conversion record.
 
 ## Graders that call models
 
 Keep the grader's requested model and API protocol unchanged, and declare its
 credential as a reference such as `OPENAI_API_KEY = "${OPENAI_API_KEY}"` in
-`[verifier].env`. NeoSigma selects grader models through its catalog and
-records any substitution; do not rewrite the grader, change its model, or add a
-fallback in task files.
+`[verifier].env`. Do not rewrite the grader, change its model, or add a
+fallback model in task files.
 
 ## Network and credential boundaries
 
@@ -137,27 +149,26 @@ Keep what the source needs and protect everything else:
   or rewrite them to pass a smoke test.
 - Host and control-plane resources are not part of the task. A task must not
   reach the developer host, cloud metadata (`169.254.169.254`), the Docker
-  socket, or sandbox control endpoints. `check_task.py` rejects Compose
-  services with `privileged`, host `network_mode`/`pid`/`ipc`/`uts`/`userns_mode`,
-  `devices`, `cap_add`, the Docker socket, or bind sources outside the task.
+  socket, or sandbox control endpoints. Do not convert a Compose service that
+  uses `privileged`, a host `network_mode`/`pid`/`ipc`/`uts`/`userns_mode`,
+  `devices`, `cap_add`, the Docker socket, or a bind source outside the task;
+  record a **format** blocker instead.
 - Builds may need network access to fetch the source's pinned dependencies;
   that is separate from the agent and verifier phases.
 - Name credentials, never store them. Every credential is a `${NAME}`
   reference in the env map of the phase that consumes it: `[environment].env`
   for the agent environment and task services, `[verifier].env` for the
-  grader. Keep the source's variable names. NeoSigma binds only credentials the
-  customer selected for the run; a task cannot select a vault or grant itself
-  access. An unbound required reference fails before the run.
+  grader. Keep the source's variable names. Values are supplied when a run
+  starts; a task cannot grant itself access to any credential.
 
 Enforcement belongs to the runtime. Do not claim a network restriction is
 enforced unless the runtime documents it; report a requirement the runtime
-cannot meet as a `capability` blocker.
+cannot meet as a **capability** blocker.
 
 ## What a manifest can represent
 
 A manifest holds regular files only, each with its bytes and one executable
-flag. NeoSigma recreates files with mode 0755 or 0644. These service defaults
-apply (the service is authoritative):
+flag; other permission bits are not kept. These limits apply:
 
 | Limit | Value |
 | --- | --- |
@@ -177,8 +188,8 @@ When a source needs something a manifest cannot hold, use a source-faithful
 build step: create directories, links and permissions in the Dockerfile, or
 fetch a large asset at build time from an immutable URL with a checksum the
 source publishes, or use the source's image by digest. Record each external
-asset in the conversion record. If no faithful representation exists, record a
-`format` blocker.
+asset in the task's conversion record. If no faithful representation exists, record a
+**format** blocker.
 
 Task bytes are immutable once published. External downloads and image tags
 are not: a tag such as `python:3.12-slim` can change. Keep the source's

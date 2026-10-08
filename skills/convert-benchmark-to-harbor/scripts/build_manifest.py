@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Serialize one task directory into a NeoSigma EvalManifest JSON payload."""
+"""Serialize one task directory into a NeoSigma EvalManifest JSON payload.
+
+With --materialize, write the exact files of an existing manifest into a new
+directory instead, so a smoke run uses the bytes that will be published.
+"""
 
 from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 import contextlib
 import hashlib
 import json
@@ -48,6 +53,8 @@ MAX_PATH_CHARACTERS = 512
 MAX_SOURCE_TASK_ID_CHARACTERS = 512
 MAX_ENTRIES = 2_000
 READ_CHUNK_BYTES = 65_536
+MANIFEST_KEYS = {"version", "source_task_id", "files"}
+MANIFEST_FILE_KEYS = {"path", "content", "executable", "media_type"}
 MANIFEST_VERSION = 1
 EXECUTABLE_BITS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
 UNREPRESENTABLE_MODE_BITS = stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX
@@ -83,12 +90,25 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--source-task-id")
     parser.add_argument("--output", type=Path)
     parser.add_argument(
+        "--materialize",
+        type=Path,
+        metavar="MANIFEST",
+        help="Write this manifest's files into the new directory given by --output.",
+    )
+    parser.add_argument(
+        "--expect-digest",
+        help="With --materialize, fail unless the manifest has this digest.",
+    )
+    parser.add_argument(
         "--skill-digest",
         action="store_true",
         help="Print the digest of the skill files that are running, then exit.",
     )
     arguments = parser.parse_args()
-    if not arguments.skill_digest and (
+    if arguments.materialize is not None:
+        if arguments.output is None:
+            parser.error("--materialize needs --output")
+    elif not arguments.skill_digest and (
         arguments.task_directory is None or arguments.source_task_id is None
     ):
         parser.error("task_directory and --source-task-id are required")
@@ -446,6 +466,143 @@ def skill_bundle_digest(directory: Path = SKILL_DIRECTORY) -> str:
     return "sha256:" + digest.hexdigest()
 
 
+def _media_type_problem(media_type: object) -> str | None:
+    if not isinstance(media_type, str) or not 0 < len(media_type) <= 128:
+        return "media_type must contain 1 to 128 characters"
+    essence = media_type.partition(";")[0].strip()
+    major, separator, subtype = essence.partition("/")
+    if (
+        not major
+        or separator != "/"
+        or not subtype
+        or "/" in subtype
+        or any(character.isspace() for character in essence)
+        or any(ord(character) < 32 or ord(character) == 127 for character in media_type)
+    ):
+        return "media_type must be a valid HTTP media type"
+    return None
+
+
+def _manifest_file_problems(index: int, item: object) -> list[Problem]:
+    location = f"files[{index}]"
+    if (
+        not isinstance(item, dict)
+        or set(item) - MANIFEST_FILE_KEYS
+        or "path" not in item
+    ):
+        return [Problem("invalid_manifest", location, "unknown or missing file keys")]
+    path = item["path"]
+    problems = []
+    reason = path_problem(path) if isinstance(path, str) else "path must be text"
+    if reason is not None:
+        problems.append(Problem("invalid_path", location, reason))
+    if not isinstance(item.get("executable", False), bool):
+        problems.append(
+            Problem("invalid_manifest", location, "executable must be true or false")
+        )
+    reason = _media_type_problem(item.get("media_type", "application/octet-stream"))
+    if reason is not None:
+        problems.append(Problem("invalid_manifest", location, reason))
+    try:
+        size = len(base64.b64decode(item.get("content", ""), validate=True))
+    except (binascii.Error, TypeError, ValueError):
+        problems.append(Problem("invalid_manifest", location, "content must be base64"))
+    else:
+        if size > MAX_FILE_BYTES:
+            problems.append(
+                Problem("file_too_large", location, "file exceeds the byte limit")
+            )
+    return problems
+
+
+def _manifest_structure_problems(files: list[dict[str, object]]) -> list[Problem]:
+    problems: list[Problem] = []
+    paths = [item["path"] for item in files]
+    path_set = set(paths)
+    if len(paths) != len(path_set):
+        problems.append(Problem("duplicate_path", "files", "file paths must be unique"))
+    problems.extend(
+        Problem("path_collision", path, f"a file is also used as a directory: {path}")
+        for path in paths
+        if any(parent.as_posix() in path_set for parent in PurePosixPath(path).parents)
+    )
+    total = sum(len(base64.b64decode(item.get("content", ""))) for item in files)
+    if len(files) > MAX_FILES:
+        problems.append(
+            Problem("too_many_files", "files", "manifest exceeds the file count limit")
+        )
+    if any(len(path.split("/")) > MAX_PATH_DEPTH for path in paths):
+        problems.append(
+            Problem("path_too_deep", "files", "manifest exceeds the path depth limit")
+        )
+    if total > MAX_TOTAL_BYTES:
+        problems.append(
+            Problem("total_too_large", "files", "manifest exceeds the total byte limit")
+        )
+    return problems
+
+
+def validate_manifest(manifest: object) -> None:
+    """Apply the manifest rules and limits before anything is written."""
+    if not isinstance(manifest, dict) or set(manifest) != MANIFEST_KEYS:
+        raise _fail(
+            "invalid_manifest", "", "manifest needs version, source_task_id and files"
+        )
+    source_task_id = manifest["source_task_id"]
+    problems = []
+    if manifest["version"] != MANIFEST_VERSION:
+        problems.append(Problem("invalid_manifest", "version", "version must be 1"))
+    if not isinstance(source_task_id, str) or not (
+        0 < len(source_task_id) <= MAX_SOURCE_TASK_ID_CHARACTERS
+    ):
+        problems.append(
+            Problem(
+                "invalid_source_task_id",
+                "source_task_id",
+                "source task ID must contain 1 to 512 characters",
+            )
+        )
+    files = manifest["files"]
+    if not isinstance(files, list) or not files:
+        raise ManifestError(
+            [*problems, Problem("no_files", "files", "manifest has no files")]
+        )
+    for index, item in enumerate(files):
+        problems.extend(_manifest_file_problems(index, item))
+    if problems:
+        raise ManifestError(problems)
+    problems.extend(_manifest_structure_problems(files))
+    if problems:
+        raise ManifestError(problems)
+
+
+def materialize(manifest: dict[str, object], output_directory: Path) -> None:
+    """Create a new directory holding exactly the manifest files (mode 0755 or 0644)."""
+    output_directory.mkdir(mode=0o755)
+    for item in manifest["files"]:  # type: ignore[union-attr]
+        destination = output_directory.joinpath(*PurePosixPath(item["path"]).parts)
+        destination.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+        mode = 0o755 if item.get("executable", False) else 0o644
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        with os.fdopen(os.open(destination, flags, mode), "wb") as stream:
+            stream.write(base64.b64decode(item.get("content", ""), validate=True))
+        os.chmod(destination, mode)
+
+
+def _materialize_command(arguments: argparse.Namespace) -> None:
+    manifest = json.loads(arguments.materialize.read_bytes())
+    validate_manifest(manifest)
+    digest = manifest_digest(manifest)
+    if arguments.expect_digest is not None and digest != arguments.expect_digest:
+        raise _fail(
+            "digest_mismatch",
+            "",
+            f"manifest digest is {digest}, expected {arguments.expect_digest}",
+        )
+    materialize(manifest, arguments.output)
+    sys.stdout.write(json.dumps({"manifest_digest": digest}) + "\n")
+
+
 def report_problems(error: ManifestError) -> None:
     """Print one stable code and reason per problem."""
     for problem in error.problems:
@@ -459,6 +616,9 @@ def main() -> int:
         sys.stdout.write(skill_bundle_digest() + "\n")
         return 0
     try:
+        if arguments.materialize is not None:
+            _materialize_command(arguments)
+            return 0
         root = _absolute_path(arguments.task_directory)
         if arguments.output is not None:
             output = _absolute_path(arguments.output)
