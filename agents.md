@@ -2,7 +2,7 @@
 
 ## NeoSigma Skill Path Changes
 
-When changing the path to any NeoSigma skill in this repo, update any install docs or plugin metadata that point to the old location. The expected skill paths are `skills/integrate-sdk`, `skills/import-verifiers`, `skills/clay-plugin-eval`, and `skills/convert-benchmark-to-harbor`.
+When changing the path to any NeoSigma skill in this repo, update any install docs or plugin metadata that point to the old location. The expected skill paths are `skills/integrate-sdk`, `skills/import-verifiers`, `skills/clay-plugin-eval`, `skills/convert-benchmark-to-harbor`, and `skills/analyze-sessions`.
 
 ## Plugin Versions
 

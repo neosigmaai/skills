@@ -1,6 +1,6 @@
 # NeoSigma Skills
 
-The NeoSigma plugin for AI coding agents. It connects your agent to the [NeoSigma](https://neosigma.ai) MCP server and adds [Agent Skills](https://github.com/anthropics/skills) that teach the agent how to work with NeoSigma: instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, convert benchmarks into Harbor tasks, and evaluate Clay on GTM Bench.
+The NeoSigma plugin for AI coding agents. It connects your agent to the [NeoSigma](https://neosigma.ai) MCP server and adds [Agent Skills](https://github.com/anthropics/skills) that teach the agent how to work with NeoSigma: instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, convert benchmarks into Harbor tasks, evaluate Clay on GTM Bench, and analyze recorded agent sessions.
 
 Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 
@@ -12,10 +12,11 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [import-verifiers](./skills/import-verifiers) | Translate a codebase's trace-evaluable quality checks into repository-backed verifier YAML, then apply the complete set through the NeoSigma MCP sync workflow. |
 | [clay-plugin-eval](./skills/clay-plugin-eval) | Set up Clay credentials in a NeoSigma Vault, run the fixed GTM Bench dataset with and without the Clay plugin, and generate a comparison report. |
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
+| [analyze-sessions](./skills/analyze-sessions) | Search a project's recorded agent sessions, open the matches, read their turns, diagnoses, and traces, and report what happened with trace links. |
 
 ## What the plugin includes
 
-- **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, traces, issues, datasets, evaluation runs, and verifiers, and to start evaluation runs.
+- **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, sessions, traces, issues, datasets, evaluation runs, and verifiers, and to start evaluation runs.
 - **Skills**: the skills in the table above.
 
 ## API key
