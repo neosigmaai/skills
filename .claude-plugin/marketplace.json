@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "neosigma-skills",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "NeoSigma skills and MCP tools for coding agents: integrate the NeoSigma SDK (agent tracing and product events), import a codebase's existing checks as verifiers, convert benchmarks into Harbor tasks, evaluate the Clay plugin, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
   "owner": {
     "name": "NeoSigma",
@@ -11,7 +11,7 @@
     {
       "name": "neosigma",
       "description": "NeoSigma skills and MCP tools for coding agents: integrate the NeoSigma SDK (agent tracing and product events), import a codebase's existing checks as verifiers, convert benchmarks into Harbor tasks, evaluate the Clay plugin, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./",
       "category": "developer-tools"
     }

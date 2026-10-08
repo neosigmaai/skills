@@ -125,6 +125,22 @@ and use it to add NeoSigma tracing to this application
 following NeoSigma best practices.
 ```
 
+### Check which skill version runs
+
+A copy of a skill installed by hand (for example in `~/.codex/skills/` or
+`~/.claude/skills/`) is not updated by the plugin, so an agent can run an older
+copy than the plugin provides. To see what is installed:
+
+- Claude Code: `~/.claude/plugins/installed_plugins.json` lists the plugin
+  version and `gitCommitSha` for `neosigma@neosigma-skills`.
+- Any agent: for `convert-benchmark-to-harbor`, run
+  `python3 <skill-directory>/scripts/build_manifest.py --skill-digest` in each
+  copy you find, and in a checkout of the release you expect. The values must
+  match. The skill also records this digest with each converted task.
+
+Remove or update a hand-installed copy yourself; the plugin does not overwrite
+it.
+
 ## SDK prerequisites
 
 The SDK reads the same API key from `NEOSIGMA_API_KEY`:
