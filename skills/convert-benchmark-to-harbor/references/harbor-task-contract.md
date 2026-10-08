@@ -15,6 +15,34 @@ in the installed package.
 Harbor 0.20.0 ignores keys it does not know, so an invented field parses and
 silently does nothing. Never add a field that is not in `TaskConfig`; never
 invent a value for `network_mode` (`"no-network"`, `"public"`, `"allowlist"`).
+Run this with Harbor 0.20.0 installed; it prints every key Harbor would ignore:
+
+```bash
+python3 - <task-dir> <<'PY'
+import sys, tomllib, typing
+from harbor.models.task import config
+
+def models(annotation):
+    if isinstance(annotation, (str, typing.ForwardRef)):
+        annotation = getattr(config, getattr(annotation, "__forward_arg__", annotation), None)
+    if isinstance(annotation, type) and issubclass(annotation, config.BaseModel):
+        return [annotation]
+    return [m for a in typing.get_args(annotation) for m in models(a)]
+
+def check(model, data, at):
+    for key, value in data.items():
+        field = model.model_fields.get(key)
+        if field is None:
+            print(f"unknown field: {at}{key}")
+            continue
+        found = [] if key in ("metadata", "env") else models(field.annotation)
+        for item in value if isinstance(value, list) else [value]:
+            if found and isinstance(item, dict):
+                check(found[0], item, f"{at}{key}.")
+
+check(config.TaskConfig, tomllib.load(open(sys.argv[1] + "/task.toml", "rb")), "")
+PY
+```
 
 Source behavior and the Harbor fields that carry it:
 
@@ -92,8 +120,10 @@ Harbor reads `/logs/verifier/reward.json` when it exists, and otherwise
 - Write the reward file only after the grader finished, through a temporary
   file and a rename.
 
-A typical wrapper, when the verifier image already has Python 3 and the source
-grader prints its result as JSON:
+A typical wrapper, when the source grader prints its result as JSON. Use an
+interpreter the verifier container already has, such as one the source's own
+test steps install; if there is none, make the same checks in the shell. Do not
+add an interpreter only to write rewards.
 
 ```sh
 #!/bin/sh
