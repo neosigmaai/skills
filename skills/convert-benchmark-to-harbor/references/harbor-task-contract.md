@@ -1,117 +1,230 @@
 # Harbor task conversion contract
 
-Apply this contract independently to every source task. A conversion is a
-faithful packaging operation, not a new benchmark design.
+Apply this contract independently to every source task. It describes Harbor
+**0.20.0**, the Harbor version NeoSigma supports. If
+`harbor --version` reports another version, install 0.20.0 for checks; do not
+rely on fields or behavior from a newer release.
 
-## Map the source before writing files
+## Format authority
 
-Record these facts from the checked-out benchmark:
+`harbor init <org>/<name> --task` produces a starting point with example
+content. It is not the full schema. The authority is the pinned parser:
+`harbor/models/task/config.py` (`TaskConfig`) and `harbor/models/task/paths.py`
+in the installed package.
 
-- stable source task ID and the source file or record that defines it;
-- exact instruction presented to the agent;
-- initial files, fixtures, services, environment variables, working directory,
-  system packages, and language dependencies available during the task;
-- agent-produced state that the source grader reads;
-- grader entrypoint, its inputs, pass/fail or score calculation, and any grader
-  dependencies;
-- source-defined reward names and numeric ranges.
+Harbor 0.20.0 ignores keys it does not know, so an invented field parses and
+silently does nothing. Never add a field that is not in `TaskConfig`; never
+invent a value for `network_mode` (`"no-network"`, `"public"`, `"allowlist"`).
+Run this with Harbor 0.20.0 installed; it prints every key Harbor would ignore:
 
-If the grader or required runtime state cannot be located or is ambiguous, stop
-for that task. Do not infer expected answers from benchmark samples and do not
-replace missing grading logic with `exit 0`, `exit 1`, a prose rubric, or an LLM
-judge that the source benchmark did not use.
+```bash
+python3 - <task-dir> <<'PY'
+import sys, tomllib, typing
+from harbor.models.task import config
+
+def models(annotation):
+    if isinstance(annotation, (str, typing.ForwardRef)):
+        annotation = getattr(config, getattr(annotation, "__forward_arg__", annotation), None)
+    if isinstance(annotation, type) and issubclass(annotation, config.BaseModel):
+        return [annotation]
+    return [m for a in typing.get_args(annotation) for m in models(a)]
+
+def check(model, data, at):
+    for key, value in data.items():
+        field = model.model_fields.get(key)
+        if field is None:
+            print(f"unknown field: {at}{key}")
+            continue
+        found = [] if key in ("metadata", "env") else models(field.annotation)
+        for item in value if isinstance(value, list) else [value]:
+            if found and isinstance(item, dict):
+                check(found[0], item, f"{at}{key}.")
+
+check(config.TaskConfig, tomllib.load(open(sys.argv[1] + "/task.toml", "rb")), "")
+PY
+```
+
+Source behavior and the Harbor fields that carry it:
+
+| Source behavior | Harbor 0.20.0 |
+| --- | --- |
+| Instruction | `instruction.md`; per step `steps/<name>/instruction.md` |
+| Build recipe | `environment/Dockerfile` |
+| Prebuilt image | `[environment].docker_image` (keep at least one source-derived file, such as `environment/IMAGE.md` recording the reference, because the `environment/` directory must exist and a manifest cannot hold an empty directory) |
+| Sidecar services | `environment/docker-compose.yaml` (service `main` is the agent container) |
+| Readiness | `[environment.healthcheck]`, `[steps.healthcheck]` |
+| Working directory, user | `[environment].workdir`, `[agent].user`, `[verifier].user` |
+| Resources and timeouts | `cpus`, `memory_mb`, `storage_mb`, `gpus`, `gpu_types`, `tpu`, `build_timeout_sec`, `[agent].timeout_sec`, `[verifier].timeout_sec` |
+| Task MCP servers | `[[environment.mcp_servers]]` with `name`, `transport` (`stdio`, `sse`, `streamable-http`), `command`, `args`, `url`. There is no `cwd` or `env` field |
+| Task skills | `[environment].skills_dir`: a directory inside the image |
+| Environment variables | `[environment].env`, `[verifier].env`, `[solution.env]`; values are literals or `${NAME}` / `${NAME:-default}` references |
+| Grader in its own container | `[verifier].environment_mode = "separate"` and optionally `[verifier.environment]`; its build files go in `tests/` (or `steps/<name>/tests/`) |
+| Files passed from agent to grader | `artifacts` (task or step), `[[verifier.collect]]` |
+| Several turns | `[[steps]]`, `min_reward`, `multi_step_reward_strategy` (`mean` or `final`) |
+| Reference solution | `solution/solve.sh`, or `steps/<name>/solution/solve.sh` |
+
+Harbor uploads `tests/` to `/tests` only after the agent finishes, and
+`solution/` to `/solution` only for the oracle agent. `environment/` and
+`instruction.md` are visible to the agent.
+
+A separate verifier works differently in Harbor 0.20.0:
+
+- Harbor does not upload `tests/` into it. Its image, built from
+  `tests/Dockerfile` (build context `tests/`), must copy the grader files to
+  `/tests`, for example `COPY . /tests/`.
+- Without `[verifier.environment]` it inherits `[environment]`, including
+  `workdir`. If that directory does not exist in the verifier image, the grader
+  never starts and every trial reports a missing reward. Declare
+  `[verifier.environment]` with a `workdir` that exists in the verifier image
+  and an explicit `network_mode`.
+- Artifacts are restored at their original source path (for example
+  `/app/report.json`). An artifact the agent did not create is skipped, so the
+  grader must handle its absence the way the source does.
 
 ## Required task contents
 
-Generate the task directory with `harbor init <org>/<task-name> --task`
-(the installed Harbor CLI) and build inside that scaffold. `task.toml`'s
-schema — `[task]`, `[environment]` (including its `network_mode`, one of
-`"no-network"`, `"public"`, or `"allowlist"` — never invent another value),
-`[agent]`, `[verifier]`, `[solution.env]` — is Harbor's own contract, not
-this skill's; do not hand-write it or guess field names from first
-principles, and do not reuse a schema recalled from outside this scaffold.
-The scaffold's `tests/test.sh` and `solution/solve.sh` are the correct
-entrypoint locations — keep them, filling in their bodies from the source.
+The task directory must be self-contained:
 
-The task directory must be self-contained and must include:
+- `task.toml` with a stable `[task].name`, an explicit
+  `[environment].network_mode`, and only `TaskConfig` fields;
+- non-empty instructions (`instruction.md`, or one per declared step);
+- `environment/` with the complete build context, or a `docker_image` plus a
+  source-derived file;
+- every task-owned input and fixture, at the paths the environment uses;
+- a verifier entrypoint (`tests/test.sh` or a step's `tests/test.sh`) and every
+  file it imports or runs;
+- the separate verifier build definition, when the grader runs separately.
 
-- `task.toml`, generated (not hand-written) as above, with a stable task
-  name and a valid agent environment definition;
-- non-empty Harbor instructions (`instruction.md`, or the instruction files
-  required by declared Harbor steps);
-- `environment/` plus its complete build/runtime context, unless `task.toml`
-  declares the agent environment image supported by Harbor;
-- all task-owned inputs and fixtures at paths reproduced by the environment;
-- a Harbor verifier entrypoint under `tests/`, plus all code and fixtures it
-  imports or executes;
-- verifier environment configuration/build context when the verifier is
-  intentionally separate from the agent environment;
-- artifact declarations when the agent and verifier exchange declared files
-  across environments.
+No file may refer to an absolute host path, the developer checkout, an
+undeclared network resource, or another task directory.
 
-No task file may be a symlink, device, socket, or named pipe. No file may refer
-to an absolute host path, the developer checkout, an undeclared network
-resource, or another converted task directory. Preserve executable permissions
-on every entrypoint. Empty directories are not represented by an EvalManifest;
-create any required runtime directory from the task's build or setup logic.
+## Reward contract
 
-Treat every source-controlled Dockerfile, Compose file, setup hook, and verifier
-as untrusted code. Before a smoke run, reject privileged containers, host
-network/PID/IPC modes, device mappings, Docker-socket access, and bind sources
-outside the task directory. Run only in a disposable coding-agent or remote
-sandbox with no developer credentials, host mounts, or unrelated files. Never
-build or execute the benchmark directly on the developer host. Deny network
-access by default. When the original benchmark requires network access,
-allowlist only documented public hostnames and always deny loopback, link-local
-and cloud-metadata addresses, RFC 1918/private ranges, and sandbox control-plane
-endpoints.
+Harbor reads `/logs/verifier/reward.json` when it exists, and otherwise
+`/logs/verifier/reward.txt`. The exit status of `test.sh` is not used.
 
-Manifest serialization requires a POSIX environment with descriptor-relative
-`O_NOFOLLOW` and `O_DIRECTORY` support. Route Windows checkouts through a
-disposable Linux coding-agent sandbox; a path-based traversal is not an
-acceptable fallback because it reintroduces symlink-swap races.
+- `reward.txt`: one finite number, stored under the name `reward`. Use it only
+  when the source has exactly one unnamed score.
+- `reward.json`: a JSON object mapping each source reward name to a finite
+  number, for example `{"accuracy": 0.73}`. A bare number is rejected.
+- Keep the source names, ranges and meanings. Do not collapse a continuous or
+  named score into pass/fail, and do not average unrelated metrics.
+- Harbor 0.20.0 accepts `NaN`, infinity, booleans and numeric strings. The
+  wrapper must reject them: write no reward file instead.
+- A legitimate zero is a score. A grader that cannot grade is not: when the
+  source grader fails in the way the source treats as an error, write no
+  reward file, so Harbor reports `RewardFileNotFoundError`.
+- Delete both reward files before grading starts. In a single-step task with a
+  shared verifier, Harbor does not clear `/logs/verifier`, so a stale file or a
+  file the agent wrote would otherwise be read as the score.
+- Write the reward file only after the grader finished, through a temporary
+  file and a rename.
 
-## Verifier behavior
+A typical wrapper, when the source grader prints its result as JSON. Use an
+interpreter the verifier container already has, such as one the source's own
+test steps install; if there is none, make the same checks in the shell. Do not
+add an interpreter only to write rewards.
 
-The verifier must exercise the original grader semantics against final task
-state. It must write every source-defined reward — whatever shape the source
-benchmark actually produces: `0`/`1`, a continuous score, several named
-metrics — as a finite JSON number (or numbers) to the reward-output location
-below. It must fail clearly when required output is absent or malformed. Do
-not award a constant result, do not silently turn grader errors into a score,
-and do not collapse a non-binary source reward into pass/fail merely to
-simplify the wrapper.
+```sh
+#!/bin/sh
+set -eu
+out=/logs/verifier
+rm -f "$out/reward.json" "$out/reward.txt"
+python3 /tests/<source-grader> <source arguments> > "$out/grader-result.json"
+python3 - "$out" <source reward names> <<'PY'
+import json, math, os, sys
+out, names = sys.argv[1], sys.argv[2:]
+def reject(constant):
+    raise ValueError(constant)
+result = json.load(open(f"{out}/grader-result.json"), parse_constant=reject)
+rewards = {name: result[name] for name in names}
+for value in rewards.values():
+    if type(value) not in (int, float) or not math.isfinite(value):
+        sys.exit("the grader did not produce finite numeric rewards")
+with open(f"{out}/.reward.json", "w") as stream:
+    json.dump(rewards, stream)
+os.replace(f"{out}/.reward.json", f"{out}/reward.json")
+PY
+```
 
-Wrapping a source grader is preferred to rewriting it. Any wrapper must only
-adapt paths, invocation, and reward serialization; it must not change scoring.
+If the source grader signals "graded, failed" with a nonzero exit status (for
+example pytest exit 1), map that to the source score instead of letting
+`set -e` turn it into a missing reward. Map only the signals the source
+defines.
 
-### Reward-output contract
+For multi-step tasks, each step writes its own rewards. `min_reward` reproduces
+a source stop rule; `multi_step_reward_strategy` reproduces how the source
+combines turns. If the source combines turns in another way, record a
+**capability** blocker. Dataset aggregation (mean, pass@k, weighting, repeats,
+seeds) is not a task field: record it in the task's conversion record.
 
-Write the finite JSON reward to `/logs/verifier/reward.txt` (a bare JSON
-number, e.g. `1` or `0.73`) or `/logs/verifier/reward.json` (a JSON number or
-object of named rewards). This is Harbor's own convention, not a NeoSigma
-one — the scaffold's `tests/test.sh` already writes to this exact location;
-keep that, do not invent a different path or filename (a wrapper that writes
-`reward.json` next to the verifier script instead, for example, will make
-Harbor raise `RewardFileNotFoundError` and the task will never actually
-grade, even though the wrapper logic itself may be correct). Exit `0` from
-`tests/test.sh` regardless of the reward's value — the reward file, not the
-exit code, is what Harbor reads as the trial's score.
+## Graders that call models
 
-## Completion gate
+Keep the grader's requested model and API protocol unchanged, and declare its
+credential as a reference such as `OPENAI_API_KEY = "${OPENAI_API_KEY}"` in
+`[verifier].env`. Do not rewrite the grader, change its model, or add a
+fallback model in task files.
 
-A task is ready to publish only when all of these are true:
+## Network and credential boundaries
 
-1. Every mapped source input, dependency, service, and grader file exists in the
-   task directory or is declared by its Harbor environment configuration.
-2. `scripts/build_manifest.py` succeeds and its path list matches the complete
-   task directory.
-3. NeoSigma `validate_harbor_task` accepts that exact generated manifest.
-4. In a disposable credential-free sandbox, Harbor constructs the environment,
-   the agent can read task-only state, and the native verifier grades the final
-   state and emits finite numeric rewards.
-5. The same manifest bytes and stable idempotency key—not a regenerated variant—
-   are supplied to `publish_harbor_task`.
+Keep what the source needs and protect everything else:
 
-Typed validation is mandatory but is not evidence of step 4. If step 4 cannot
-be run safely, leave that task unpublished and state the blocker.
+- Set `network_mode` from the source: `no-network` when the source runs
+  offline, `allowlist` with the documented public hosts when it needs them,
+  `public` only when the source needs open web access. Phase overrides in
+  `[agent]` and `[verifier]` apply only to that phase.
+- Task-local services are part of the task. Compose sidecars, a database in
+  the task container, and a stdio or local HTTP MCP server reached over the
+  loopback or Compose network are allowed and must keep working. Do not remove
+  or rewrite them to pass a smoke test.
+- Host and control-plane resources are not part of the task. A task must not
+  reach the developer host, cloud metadata (`169.254.169.254`), the Docker
+  socket, or sandbox control endpoints. Do not convert a Compose service that
+  uses `privileged`, a host `network_mode`/`pid`/`ipc`/`uts`/`userns_mode`,
+  `devices`, `cap_add`, the Docker socket, or a bind source outside the task;
+  record a **format** blocker instead.
+- Builds may need network access to fetch the source's pinned dependencies;
+  that is separate from the agent and verifier phases.
+- Name credentials, never store them. Every credential is a `${NAME}`
+  reference in the env map of the phase that consumes it: `[environment].env`
+  for the agent environment and task services, `[verifier].env` for the
+  grader. Keep the source's variable names. Values are supplied when a run
+  starts; a task cannot grant itself access to any credential.
+
+Enforcement belongs to the runtime. Do not claim a network restriction is
+enforced unless the runtime documents it; report a requirement the runtime
+cannot meet as a **capability** blocker.
+
+## What a manifest can represent
+
+A manifest holds regular files only, each with its bytes and one executable
+flag; other permission bits are not kept. These limits apply:
+
+| Limit | Value |
+| --- | --- |
+| Files | 1,000 |
+| Bytes per file | 4 MiB |
+| Total bytes | 20 MiB |
+| Path depth | 16 components |
+| Path length | 512 characters, canonical relative POSIX, no `\` or control characters |
+| Directory entries scanned | 2,000 |
+
+`build_manifest.py` reports, in one run, every entry it cannot represent:
+`symlink`, `special_file` (FIFO, socket, device), `empty_directory`,
+`unrepresentable_mode` (setuid, setgid, sticky), `invalid_path`,
+`file_too_large`, `total_too_large`. It never skips or flattens an entry.
+
+When a source needs something a manifest cannot hold, use a source-faithful
+build step: create directories, links and permissions in the Dockerfile, or
+fetch a large asset at build time from an immutable URL with a checksum the
+source publishes, or use the source's image by digest. Record each external
+asset in the task's conversion record. If no faithful representation exists, record a
+**format** blocker.
+
+Task bytes are immutable once published. External downloads and image tags
+are not: a tag such as `python:3.12-slim` can change. Keep the source's
+references unchanged and record whether each is pinned.
+
+Serialization needs a POSIX system with descriptor-relative `O_NOFOLLOW` and
+`O_DIRECTORY`. On Windows, use a disposable Linux sandbox; never replace the
+serializer with a path-based copy.
