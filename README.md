@@ -141,17 +141,6 @@ plugin, and can hide the plugin's newer copy. To see what is installed:
 Remove or update a hand-installed copy yourself; the plugin does not overwrite
 it.
 
-### Develop the benchmark conversion skill
-
-```bash
-python3 -m unittest discover -s skills/convert-benchmark-to-harbor/scripts
-uv run --no-project --with harbor==0.20.0 \
-  python -m unittest discover -s tests/convert-benchmark-to-harbor
-```
-
-The second command validates the fixtures in `tests/convert-benchmark-to-harbor/`
-with the Harbor version NeoSigma pins. It does not run containers.
-
 ## SDK prerequisites
 
 The SDK reads the same API key from `NEOSIGMA_API_KEY`:

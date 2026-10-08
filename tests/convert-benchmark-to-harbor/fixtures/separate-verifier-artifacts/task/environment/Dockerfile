@@ -1,3 +1,0 @@
-FROM python:3.12-slim
-WORKDIR /app
-COPY data.csv /app/data.csv

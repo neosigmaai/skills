@@ -113,7 +113,7 @@ For multi-step tasks, each step writes its own rewards. `min_reward` reproduces
 a source stop rule; `multi_step_reward_strategy` reproduces how the source
 combines turns. If the source combines turns in another way, record a
 `capability` blocker. Dataset aggregation (mean, pass@k, weighting, repeats,
-seeds) is not a task field: record it in the conversion record.
+seeds) is not a task field: record it in the task's conversion record.
 
 ## Graders that call models
 

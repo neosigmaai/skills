@@ -22,13 +22,14 @@ decision from files and metadata in the checked-out benchmark; never branch on a
 benchmark's name. Inspect only that checkout, this skill, and the installed
 Harbor CLI/API. Do not reuse earlier conversions as implementation guidance.
 
-Read both references before converting anything:
+Read [`references/harbor-task-contract.md`](references/harbor-task-contract.md)
+before converting anything: the Harbor format at the version NeoSigma pins, the
+reward contract, network and credential boundaries, and what a manifest can
+represent.
 
-- [`references/harbor-task-contract.md`](references/harbor-task-contract.md):
-  the Harbor format at the version NeoSigma pins, the reward contract, network
-  and credential boundaries, and what a manifest can represent.
-- [`references/conversion-record.md`](references/conversion-record.md): the
-  per-task record you fill in, the evidence it needs, and the final report.
+Keep one conversion record per task (JSON or Markdown) in your work directory,
+outside the task directory. It holds the source mapping (step 2), the evidence
+(steps 4 and 5) and any blocker. It is not published.
 
 The scripts in `scripts/` need only Python 3. `check_task.py` also needs
 Harbor at the pinned version; run it with
@@ -51,8 +52,7 @@ Harbor at the pinned version; run it with
 
 ## 2. Map each source task
 
-Fill in the `source` and `mapping` sections of a conversion record for each
-task, from source files only: identity and boundaries, instruction and initial
+Write down in the conversion record, from source files only: identity and boundaries, instruction and initial
 inputs, interaction mode, environment (packages and versions, images,
 services, user, working directory, startup, health checks, resources,
 timeouts), task tools and MCP servers, skills, credential variable names and
@@ -139,10 +139,13 @@ only the test credentials the task declares. Then run these controls with
 - **broken grader**: a control-only copy whose grader crashes. It must produce
   `reward_file_missing`, never a score.
 
-Classify the runs with `scripts/summarize_trials.py <work>/jobs`. Run the
-source grader on the same states in the same sandbox and compare. Record the
-results in the record's `validation` section (see the record reference for
-stochastic graders).
+Read each trial's `result.json`. A control is graded only when
+`verifier_result.rewards` is a non-empty object of finite numbers; an
+`exception_info.exception_type` such as `RewardFileNotFoundError` means the
+grader did not grade. Run the unchanged source grader on the same states in the
+same sandbox and record both rewards; they must be equal. For a grader that is
+not deterministic (for example, it calls a model), record the number of repeats,
+both score distributions and the tolerance you accepted instead.
 
 ## 6. Correct, or stop
 
@@ -163,14 +166,16 @@ mode, or writing a fixed score.
 Ask for confirmation before the first external write unless the user asked you
 to create the dataset and publish. Then, for each task:
 
-1. Run `python3 <skill-directory>/scripts/check_record.py <record.json>
-   --manifest <work>/manifest.json`. Publish only when it exits 0 and reports
-   `publishable: true`.
+1. Publish only a task whose record has no blocker, whose `check_task.py` run
+   passed, whose three controls behaved as expected, and whose manifest digest
+   is the same from `build_manifest.py`, `validate_harbor_task` and
+   `materialize_manifest.py`.
 2. Use `list_projects` and `list_datasets`, or `create_dataset`. Use one
    dataset per source revision.
 3. Call `publish_harbor_task` with that exact manifest and the
-   `idempotency_key` printed by `check_record.py`. Reuse the same key and
-   manifest to retry. If NeoSigma answers `idempotency_key_reused`, the dataset
+   idempotency key `harbor:` followed by the SHA-256 hex digest of
+   `<repository>@<revision>#<source-task-id>`. Reuse the same key and manifest
+   to retry. If NeoSigma answers `idempotency_key_reused`, the dataset
    already holds different bytes for this source task: report it; do not change
    the key to get around it.
 
