@@ -1,6 +1,6 @@
 {
   "record_version": 1,
-  "skill_bundle_digest": "sha256:dd71767436ec570ce03e456d9e584aa57b2e6541960a1438910179a2612482a1",
+  "skill_bundle_digest": "sha256:645818306d42adc62e6b845e2f3d3ad1d9f2520a320d439027c049402cfde9bd",
   "status": "ready",
   "source": {
     "repository": "https://github.com/neosigmaai/skills",

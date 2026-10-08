@@ -52,7 +52,8 @@ MANIFEST_VERSION = 1
 EXECUTABLE_BITS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
 UNREPRESENTABLE_MODE_BITS = stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX
 SKILL_DIRECTORY = Path(__file__).resolve().parent.parent
-SKILL_BUNDLE_IGNORED = {"__pycache__", ".DS_Store"}
+# Caches and hidden files are not part of the skill.
+SKILL_BUNDLE_IGNORED = {"__pycache__"}
 
 
 class Problem(NamedTuple):
@@ -435,7 +436,10 @@ def skill_bundle_digest(directory: Path = SKILL_DIRECTORY) -> str:
     digest = hashlib.sha256()
     for path in sorted(directory.rglob("*")):
         relative = path.relative_to(directory)
-        if not path.is_file() or SKILL_BUNDLE_IGNORED & set(relative.parts):
+        if not path.is_file() or any(
+            part.startswith(".") or part in SKILL_BUNDLE_IGNORED
+            for part in relative.parts
+        ):
             continue
         digest.update(relative.as_posix().encode() + b"\0")
         digest.update(hashlib.sha256(path.read_bytes()).hexdigest().encode() + b"\n")

@@ -434,6 +434,22 @@ with patch.object(module.os, "open", side_effect=swap):
         )
         self.assertEqual(summary["file_count"], 1)
 
+    def test_skill_digest_ignores_caches_and_hidden_files(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+            skill = Path(temporary_directory)
+            (skill / "scripts").mkdir()
+            (skill / "SKILL.md").write_text("skill")
+            (skill / "scripts" / "tool.py").write_text("tool")
+            before = BUILD_MANIFEST.skill_bundle_digest(skill)
+            (skill / "scripts" / "__pycache__").mkdir()
+            (skill / "scripts" / "__pycache__" / "tool.pyc").write_bytes(b"cache")
+            (skill / "scripts" / ".ruff_cache").mkdir()
+            (skill / "scripts" / ".ruff_cache" / "entry").write_text("cache")
+            (skill / ".DS_Store").write_bytes(b"finder")
+            self.assertEqual(BUILD_MANIFEST.skill_bundle_digest(skill), before)
+            (skill / "SKILL.md").write_text("changed skill")
+            self.assertNotEqual(BUILD_MANIFEST.skill_bundle_digest(skill), before)
+
     def test_cli_prints_the_skill_digest_without_a_task(self) -> None:
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--skill-digest"],
