@@ -102,24 +102,31 @@ serializer with a path-based copy loop.
    task, stop and report the Harbor contract blocker plus the local paths that
    need a human decision.
 3. After typed validation, smoke-run every converted task with the installed
-   Harbor CLI. Harbor builds the task's own environment and runs the agent and
-   verifier inside containers; that container run is the sandbox. Run
+   Harbor CLI, either locally or in a disposable coding-agent or remote sandbox.
+   Harbor builds the task's own environment and runs the agent and verifier
+   inside containers; that container run is the sandbox. Wherever it runs, it
+   must contain no developer credentials, host mounts, or unrelated checkout
+   files. Run
    `harbor run --path <task-directory> --agent oracle --jobs-dir <scratch-dir>`
    when the task has a reference solution, and
    `harbor run --path <task-directory> --agent nop --jobs-dir <scratch-dir>`
    to confirm an untouched submission is graded rather than rewarded by
    default. Pass only when Harbor reports zero exceptions and a finite reward
    for every trial; for a pass/fail source, the reference solution must earn the
-   source's passing reward. Never run benchmark code, Dockerfiles, or setup
-   hooks outside Harbor's container run. Before the smoke run, reject task
-   definitions that request privileged containers, host network/PID/IPC
-   modes, devices, Docker-socket access, or bind sources outside the task, and
-   keep `network_mode` as `"no-network"` unless the source benchmark genuinely
-   needs public network access.
+   source's passing reward. Confirm the agent can access task-owned state and
+   the verifier observes the final environment state. Never run benchmark code,
+   Dockerfiles, or setup hooks outside Harbor's container run, and never build
+   or execute an untrusted benchmark directly on the developer host. Before the
+   smoke run, reject task definitions that request privileged containers, host
+   network/PID/IPC modes, devices, Docker-socket access, or bind sources outside
+   the task. Keep `network_mode` as `"no-network"` unless the source benchmark
+   genuinely needs public network access; then allowlist only its documented
+   public hostnames and always block loopback, link-local and cloud-metadata
+   addresses, private network ranges, and sandbox control-plane endpoints.
 4. Do not publish a converted task unless both typed validation and the Harbor
-   smoke run succeed. If Docker or Harbor is unavailable, leave the task
-   unpublished and report the blocker. Structural validation alone is not an
-   end-to-end pass.
+   smoke run succeed. If Docker, Harbor, or a suitable sandbox is unavailable,
+   leave the task unpublished and report the blocker. Structural validation
+   alone is not an end-to-end pass.
 
 ## Create and publish
 
@@ -134,7 +141,7 @@ explicitly asked to create the dataset and publish the converted tasks. Then:
    datasets with `neosigma datasets list --project-id <project-id>` (MCP:
    `list_projects`, `list_datasets`) or create one with
    `neosigma datasets create --project-id <project-id> --name <name>` (MCP:
-   `create_dataset`).
+   `create_dataset` with the selected project, name, and purpose).
 2. Publish each validated manifest once with
    `neosigma datasets tasks create --dataset-id <dataset-id> --idempotency-key
    <key> --manifest @<manifest.json>` (MCP: `publish_harbor_task`). Derive the
