@@ -42,7 +42,11 @@ previously converted task artifacts as implementation guidance.
    for the reward-output contract the scaffolded `tests/test.sh` already
    implements. Preserve executable modes. Copy source-controlled inputs; do
    not reference files outside the task directory or depend on the original
-   checkout remaining available at run time.
+   checkout remaining available at run time. Never fetch the benchmark's own
+   repository from `environment/Dockerfile` (`git clone`, `ADD`, `curl`,
+   `pip install git+`); copy the files it needs into `environment/` and `COPY`
+   them, even when the source Dockerfile fetches it. Fetching other public
+   dependencies is allowed.
 3. Make the verifier (`tests/test.sh`, plus whatever it invokes) evaluate the
    final task state and write the exact reward the source benchmark's own
    grader produces — this is `0`/`1` for a pass/fail benchmark like HumanEval,
@@ -86,40 +90,56 @@ be swapped to a symlink between validation and reading. On Windows, move the
 checkout into a disposable Linux coding-agent sandbox; do not replace the
 serializer with a path-based copy loop.
 
-1. Call `validate_harbor_task` for every generated manifest. This calls the same typed
-   limits and Harbor parser used by publication and creates no GCS objects,
-   datasets, or task rows.
+1. Validate every generated manifest with
+   `neosigma datasets tasks validate --manifest @<manifest.json>`, or with the
+   NeoSigma MCP tool `validate_harbor_task` when the CLI is not installed.
+   This calls the same typed limits and Harbor parser used by publication and
+   creates no GCS objects, datasets, or task rows.
 2. Correct a failed validation from the local task directory, then validate
    again. Continue only while each attempt addresses an identified missing or
    invalid contract element. Do not use a fixed benchmark-specific patch or an
    unbounded retry loop. After three materially different failed attempts for a
    task, stop and report the Harbor contract blocker plus the local paths that
    need a human decision.
-3. After typed validation, smoke-run every converted task through Harbor in a
-   disposable coding-agent or remote sandbox. The sandbox must contain no
-   developer credentials, host mounts, Docker socket, or unrelated checkout
-   files. Deny network access by default. If the source benchmark genuinely
-   requires network access, allowlist only its documented public hostnames and
-   always block loopback, link-local and cloud-metadata addresses, private
-   network ranges, and sandbox control-plane endpoints. Reject task definitions that request privileged containers, host
-   network/PID/IPC modes, devices, or bind sources outside the task. Confirm the
-   agent can access task-owned state, the verifier observes final environment
-   state, and finite numeric rewards are emitted. Never build or execute an
-   untrusted benchmark directly on the developer host.
-4. Do not publish a converted task unless both typed validation and the sandboxed
-   Harbor smoke run succeed. If a suitable sandbox is unavailable, leave the
-   task unpublished and report the blocker. Structural validation alone is not
-   an end-to-end pass.
+3. After typed validation, smoke-run every converted task with the installed
+   Harbor CLI. Harbor builds the task's own environment and runs the agent and
+   verifier inside containers; that container run is the sandbox. Run
+   `harbor run --path <task-directory> --agent oracle --jobs-dir <scratch-dir>`
+   when the task has a reference solution, and
+   `harbor run --path <task-directory> --agent nop --jobs-dir <scratch-dir>`
+   to confirm an untouched submission is graded rather than rewarded by
+   default. Pass only when Harbor reports zero exceptions and a finite reward
+   for every trial; for a pass/fail source, the reference solution must earn the
+   source's passing reward. Never run benchmark code, Dockerfiles, or setup
+   hooks outside Harbor's container run. Before the smoke run, reject task
+   definitions that request privileged containers, host network/PID/IPC
+   modes, devices, Docker-socket access, or bind sources outside the task, and
+   keep `network_mode` as `"no-network"` unless the source benchmark genuinely
+   needs public network access.
+4. Do not publish a converted task unless both typed validation and the Harbor
+   smoke run succeed. If Docker or Harbor is unavailable, leave the task
+   unpublished and report the blocker. Structural validation alone is not an
+   end-to-end pass.
 
 ## Create and publish
 
-Ask for confirmation before the first external write unless the user explicitly
-asked to create the dataset and publish the converted tasks. Then:
+Use the `neosigma` CLI when it is installed, and the NeoSigma MCP tools named
+below otherwise. When you were started by `neosigma datasets prepare`, the CLI
+is already authenticated through `NEOSIGMA_API_KEY`, the dataset already exists,
+and its ID is in your instructions: publish there without asking for confirmation.
+Otherwise, ask for confirmation before the first external write unless the user
+explicitly asked to create the dataset and publish the converted tasks. Then:
 
-1. Use `list_projects` and `list_datasets`; use an existing intended dataset or
-   call `create_dataset` with the selected project, name, and purpose.
-2. Call `publish_harbor_task` once for each validated manifest. Use a stable
-   idempotency key derived from the immutable source task identity. Reuse that
+1. Use the dataset ID you were given. Only if none was given, list existing
+   datasets with `neosigma datasets list --project-id <project-id>` (MCP:
+   `list_projects`, `list_datasets`) or create one with
+   `neosigma datasets create --project-id <project-id> --name <name>` (MCP:
+   `create_dataset`).
+2. Publish each validated manifest once with
+   `neosigma datasets tasks create --dataset-id <dataset-id> --idempotency-key
+   <key> --manifest @<manifest.json>` (MCP: `publish_harbor_task`). Derive the
+   key from the immutable source task identity (for example
+   `harbor:<source-task-id>`), and reuse that
    exact key and manifest only when retrying the same publication.
 3. Report the dataset ID, published source-task IDs, skipped tasks, and any
    validation or fidelity blockers. The service validates again before it writes

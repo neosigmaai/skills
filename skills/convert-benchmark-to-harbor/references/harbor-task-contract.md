@@ -58,10 +58,10 @@ create any required runtime directory from the task's build or setup logic.
 Treat every source-controlled Dockerfile, Compose file, setup hook, and verifier
 as untrusted code. Before a smoke run, reject privileged containers, host
 network/PID/IPC modes, device mappings, Docker-socket access, and bind sources
-outside the task directory. Run only in a disposable coding-agent or remote
-sandbox with no developer credentials, host mounts, or unrelated files. Never
-build or execute the benchmark directly on the developer host. Deny network
-access by default. When the original benchmark requires network access,
+outside the task directory. Build and execute benchmark code only through
+`harbor run`, which runs the task's environment, agent, and verifier in
+containers with no developer credentials, host mounts, or unrelated files;
+never run it directly on the developer host. Deny network access by default. When the original benchmark requires network access,
 allowlist only documented public hostnames and always deny loopback, link-local
 and cloud-metadata addresses, RFC 1918/private ranges, and sandbox control-plane
 endpoints.
@@ -106,12 +106,13 @@ A task is ready to publish only when all of these are true:
    task directory or is declared by its Harbor environment configuration.
 2. `scripts/build_manifest.py` succeeds and its path list matches the complete
    task directory.
-3. NeoSigma `validate_harbor_task` accepts that exact generated manifest.
-4. In a disposable credential-free sandbox, Harbor constructs the environment,
-   the agent can read task-only state, and the native verifier grades the final
-   state and emits finite numeric rewards.
+3. `neosigma datasets tasks validate --manifest @<manifest.json>` (MCP:
+   `validate_harbor_task`) accepts that exact generated manifest.
+4. In a `harbor run` smoke run, Harbor constructs the environment, the agent
+   can read task-only state, and the native verifier grades the final state and
+   emits finite numeric rewards with zero exceptions.
 5. The same manifest bytes and stable idempotency key—not a regenerated variant—
-   are supplied to `publish_harbor_task`.
+   are supplied to `neosigma datasets tasks create` (MCP: `publish_harbor_task`).
 
 Typed validation is mandatory but is not evidence of step 4. If step 4 cannot
 be run safely, leave that task unpublished and state the blocker.
