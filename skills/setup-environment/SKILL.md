@@ -147,11 +147,11 @@ from the plugin; the user can get it from NeoSigma.
    - `422`: fix the field the error names, such as content over 100 KB.
 3. Call `verify_workspace_setup` with the saved `setup_script.id`. Pass
    `primary_ref` only for a pushed branch, tag, or commit that the user named.
-4. Handle the response:
-   - `skipped: true`: the same script, variables, and commits already passed.
-     Go to Step 7.
-   - `joined: true`: a verification of the same inputs is already running.
-     Poll it.
+4. Handle the response by its `status`:
+   - `started`: a new verification is queued. Poll it.
+   - `joined`: a verification of the same inputs is already running. Poll it.
+   - `skipped`: the same script, variables, and commits already passed, and
+     `verification` is null. Go to Step 7.
    - `409 workspace_setup_source_unavailable`: the workspace cannot boot (no
      repository or setup project). Tell the user to fix the workspace in
      NeoSigma, and stop.
