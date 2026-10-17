@@ -63,6 +63,15 @@ stdin and `NEOSIGMA_EVAL_SESSION_ID` in its environment.
 - Never print raw stderr, secrets, application errors, a rubric, or an expected
   output. Never echo the input, synthesize an answer, or call a model in place
   of the system under test.
+- Give each failure class its own `code`, for example `import_failed`,
+  `dependency_unavailable`, or `agent_run_failed`. Never map every exception to
+  one code: the code is all the probe diagnostics show.
+- A Python file run by path imports from its own directory, not from `cwd`.
+  When the application is not an installed package (for example
+  `package = false` in `pyproject.toml`), run a repository entry point as a
+  module (`python -m package.entrypoint`) from the project root. A generated
+  entry point adds `os.getcwd()` to `sys.path` before it imports the
+  application.
 
 ## The manifest
 
@@ -81,8 +90,13 @@ Write one root-owned regular file at `/run/neosigma/eval-harness.json`, mode
 - `cwd` stays under the primary repository.
 - `environment` lists variable names only, never values. The entry point
   receives only the variables named here.
-- `probe` is one harmless, non-secret EvalInput with a real `task`, using the
-  same translation path as a real case.
+- `probe` is one harmless, non-secret EvalInput that runs the agent's real
+  path, including the tools and services a normal case uses. Take it from the
+  repository's own tests, fixtures, README examples, or sample data. A task
+  such as "reply with: ready" proves only the wiring, so a setup with a broken
+  tool or service still passes. When the repository has no such input, ask the
+  user for one representative task. The probe uses the same translation path
+  as a real case.
 - Do not add an adapter version or a shell-command field.
 - `execution` is required. A manifest without it is refused before the broker
   starts. Declare exactly one mode, and never infer it from file or command
@@ -98,7 +112,8 @@ response or rebuilds context from `messages`. Its `continuationProbe` declares:
 
 Choose a `secondInput` whose correct answer is reachable only by reading
 `messages`, for example a first turn that asks a question and a transcript that
-already contains the answer. Verification runs the first turn, then
+already contains the answer. Build it from the same kind of real case as
+`probe`. Verification runs the first turn, then
 `secondInput` as a separate process, and requires the declared output exactly.
 An entry point that ignores history fails here.
 
@@ -112,6 +127,38 @@ JSONL result frame with the same `requestId` per input line. Its
 `continuationProbe` declares `firstInput`, `secondInput`, and
 `expectedSecondOutput`. Do not declare this mode for a one-shot CLI, and do not
 emulate state in the adapter.
+
+## Self-test the entry point
+
+The broker discards the entry point's stderr, because it can carry customer
+data. When verification's probe fails, `diagnostics` shows only the failure
+code. So after the script writes the manifest and before it starts the broker,
+it runs the entry point once itself, with the probe input, and stops with the
+real error when that run fails. A failed boot's script output reaches
+`diagnostics` with secrets scrubbed, so this is the error you repair from.
+
+Run it as `user` with the manifest's exact `cwd`, `argv`, and variable names,
+and with the fixed environment the broker gives the entry point:
+
+    selftest_err=/tmp/eval-selftest.err
+    selftest_out="$(printf '%s' "$PROBE_JSON" | runuser -u user -- env -i \
+      HOME=/home/user USER=user LOGNAME=user LANG=C.UTF-8 \
+      PATH=/usr/local/bin:/usr/bin:/bin NEOSIGMA_EVAL_SESSION_ID=setup-self-test \
+      ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
+      bash -c 'cd "$1" && shift && exec "$@"' _ "$HARNESS_CWD" "${HARNESS_ARGV[@]}" \
+      2>"$selftest_err")" || true
+    if ! printf '%s' "$selftest_out" | python3 -c \
+      'import json,sys; sys.exit(json.loads(sys.stdin.read().splitlines()[-1])["status"] != "ok")' \
+      2>/dev/null; then
+      tail -n 40 "$selftest_err"
+      die "eval entry point self-test failed: ${selftest_out:-no output}"
+    fi
+    log "eval entry point self-test passed"
+
+- Replace the `ANTHROPIC_API_KEY=` line with one `NAME="$NAME"` pair for each
+  name in the manifest's `environment`, and no others.
+- The self-test runs the agent once more than verification does, so it can make
+  one extra live model call.
 
 ## Start the broker
 
@@ -153,6 +200,8 @@ between `&`, `$!`, and the PID-file write:
   application's real result. A successful status alone proves nothing.
 - Confirm the manifest has `cwd`, `argv`, `environment`, `probe`, and an
   explicit `execution` mode with its continuation probe.
+- Confirm the `probe` runs a real case, and the script self-tests the entry
+  point with it before it starts the broker.
 - Confirm the broker lifecycle in the script: the stop helper call with the PID
   path, broker path, and port `7391`; `$!` captured right after the start; the
   PID written before the health check; and `kill -0` on the captured PID.

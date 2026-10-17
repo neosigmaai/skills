@@ -105,6 +105,9 @@ Ask in one message, and only about real choices:
 - For each remote-only service: enable it (its key must be stored in NeoSigma)
   or skip it (the script boots without it)?
 - When several agent surfaces exist: which one does this workspace represent?
+- When the repository has no realistic sample input for the harness probe
+  (tests, fixtures, README examples, or sample data): one representative task
+  the agent should handle.
 
 Do not ask about anything the repository states, such as variable names,
 ports, or start commands. When an answer needs a variable that is not in
@@ -187,6 +190,9 @@ Repair from the evidence, never by guessing:
 - `failure_kind: "health_probe"`: fix the eval adapter stage, not unrelated
   service ports. See
   [`references/eval-harness-contract.md`](references/eval-harness-contract.md).
+  The probe's failure code is not a cause. When the diagnostics show no real
+  error, add the entry point self-test from that file before you change
+  anything else, and repair from the error it prints.
 - `failure_kind: "timeout"`: a step hung or the script stayed in the
   foreground. Find the stage after the last `[eval-stack]` milestone.
 - `failure_kind: "nonzero_exit"`: read the last `[eval-stack]` lines and the
