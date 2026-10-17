@@ -187,6 +187,9 @@ Repair from the evidence, never by guessing:
 - `failure_kind: "health_probe"`: fix the eval adapter stage, not unrelated
   service ports. See
   [`references/eval-harness-contract.md`](references/eval-harness-contract.md).
+  The probe's failure code is not a cause. When the diagnostics show no real
+  error, add the entry point self-test from that file before you change
+  anything else, and repair from the error it prints.
 - `failure_kind: "timeout"`: a step hung or the script stayed in the
   foreground. Find the stage after the last `[eval-stack]` milestone.
 - `failure_kind: "nonzero_exit"`: read the last `[eval-stack]` lines and the
