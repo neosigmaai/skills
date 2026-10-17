@@ -105,9 +105,6 @@ Ask in one message, and only about real choices:
 - For each remote-only service: enable it (its key must be stored in NeoSigma)
   or skip it (the script boots without it)?
 - When several agent surfaces exist: which one does this workspace represent?
-- When the repository has no realistic sample input for the harness probe
-  (tests, fixtures, README examples, or sample data): one representative task
-  the agent should handle.
 
 Do not ask about anything the repository states, such as variable names,
 ports, or start commands. When an answer needs a variable that is not in
