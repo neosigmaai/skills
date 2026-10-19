@@ -63,6 +63,8 @@ stdin and `NEOSIGMA_EVAL_SESSION_ID` in its environment.
 - Never print raw stderr, secrets, application errors, a rubric, or an expected
   output. Never echo the input, synthesize an answer, or call a model in place
   of the system under test.
+- Report every failure as `status: "error"`. Never print `status: "ok"` with
+  placeholder output, because a broken harness then reads as a wrong answer.
 - Give each failure class its own `code`, for example `import_failed`,
   `dependency_unavailable`, or `agent_run_failed`. Never map every exception to
   one code: the code is all the probe diagnostics show.
@@ -105,7 +107,9 @@ Choose a `secondInput` whose correct answer is reachable only by reading
 `messages`, for example a first turn that asks a question and a transcript that
 already contains the answer. Verification runs the first turn, then
 `secondInput` as a separate process, and requires the declared output exactly.
-An entry point that ignores history fails here.
+An entry point that ignores history fails here. When the agent's output varies
+between runs, give `secondInput` an `outputSchema` that asks only for fields
+that `messages` supply, and put only those fields in `expectedSecondOutput`.
 
 ### `resident_jsonl`
 
