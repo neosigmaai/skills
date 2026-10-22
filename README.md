@@ -12,11 +12,11 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [import-verifiers](./skills/import-verifiers) | Translate a codebase's trace-evaluable quality checks into repository-backed verifier YAML, then apply the complete set through the NeoSigma MCP sync workflow. |
 | [clay-plugin-eval](./skills/clay-plugin-eval) | Set up Clay credentials in a NeoSigma Vault, run the fixed GTM Bench dataset with and without the Clay plugin, and generate a comparison report. |
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
-| [setup-environment](./skills/setup-environment) | Write the setup script that boots a workspace's repositories in a NeoSigma sandbox, save it, verify it, and repair it from the verification diagnostics until it passes. |
+| [setup-environment](./skills/setup-environment) | Write the setup script that boots a workspace's repositories in a NeoSigma sandbox into the repository, verify it on a branch, repair it from the verification diagnostics until it passes, and open a pull request. |
 
 ## What the plugin includes
 
-- **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, traces, issues, datasets, evaluation runs, and verifiers, to start evaluation runs, and to save and verify a workspace's setup script.
+- **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, traces, issues, datasets, evaluation runs, and verifiers, to start evaluation runs, and to read and verify a workspace's setup script.
 - **Skills**: the skills in the table above.
 
 ## API key
@@ -151,4 +151,4 @@ Once installed, your agent can use the MCP tools and skills when you ask it to:
 - Import existing trace-evaluable quality checks as repository-backed verifier YAML
 - Evaluate the Clay plugin against the fixed GTM Bench dataset
 - Convert a benchmark in this workspace into Harbor tasks and publish a NeoSigma dataset
-- Write and verify the setup script that boots this repository in a NeoSigma sandbox
+- Write the setup script that boots this repository in a NeoSigma sandbox, verify it, and open a pull request
