@@ -19,9 +19,9 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 - **NeoSigma MCP server** (`https://api.neosigma.ai/mcp`): tools to read workspaces, projects, traces, issues, datasets, evaluation runs, and verifiers, to start evaluation runs, and to read and verify a workspace's setup script.
 - **Skills**: the skills in the table above.
 
-## API key
+## Sign-in
 
-The MCP server needs a NeoSigma API key. Create an `ns_live_...` key in NeoSigma under **Settings > Developer > API Keys**.
+Claude Code and Codex sign you in to the MCP server with your NeoSigma account, in the browser, the first time you connect. You do not copy an API key. The agent acts in the organization you opened last in NeoSigma. To use another organization, switch to it in NeoSigma.
 
 ## Installation
 
@@ -34,19 +34,33 @@ Run these commands inside Claude Code:
 /plugin install neosigma@neosigma-skills
 ```
 
-Enter your API key when Claude Code asks for it. Claude Code keeps the key in secure storage.
-
-If you install from a terminal with `claude plugin install`, Claude Code does not ask for the key. Set it inside Claude Code:
-
-```
-/plugin configure neosigma@neosigma-skills
-```
+Then run `/mcp`, select `neosigma`, and select **Authenticate**. Sign in to NeoSigma in the browser that opens. Claude Code keeps the sign-in in secure storage and renews it.
 
 To make sure that the plugin works, run `/mcp` and look for `neosigma`.
 
 ### Codex
 
-1. Set the `NEOSIGMA_API_KEY` environment variable to your API key.
+1. Add the marketplace:
+
+   ```bash
+   codex plugin marketplace add neosigmaai/skills
+   ```
+
+2. Start Codex, run `/plugins`, and install **neosigma**.
+
+3. Sign in to NeoSigma in the browser that this command opens:
+
+   ```bash
+   codex mcp login neosigma
+   ```
+
+To make sure that the plugin works, run `/mcp` and look for `neosigma`.
+
+### Pi
+
+Requires Pi 0.99.0 or later, which added built-in MCP support. Check with `pi --version`.
+
+1. Create an `ns_live_...` API key in NeoSigma under **Settings > Developer > API Keys**, and set the `NEOSIGMA_API_KEY` environment variable to it.
 
    macOS and Linux:
 
@@ -59,24 +73,6 @@ To make sure that the plugin works, run `/mcp` and look for `neosigma`.
    ```powershell
    setx NEOSIGMA_API_KEY "ns_live_..."
    ```
-
-2. Add the marketplace:
-
-   ```bash
-   codex plugin marketplace add neosigmaai/skills
-   ```
-
-3. Start Codex, run `/plugins`, and install **neosigma**.
-
-If you set or change the key while Codex runs, fully stop Codex before you start it again. Codex keeps a background process that does not see new environment variables.
-
-To make sure that the plugin works, run `/mcp` and look for `neosigma`.
-
-### Pi
-
-Requires Pi 0.99.0 or later, which added built-in MCP support. Check with `pi --version`.
-
-1. Set the `NEOSIGMA_API_KEY` environment variable to your API key, as in the Codex steps above.
 
 2. Install the skills:
 
@@ -128,7 +124,7 @@ following NeoSigma best practices.
 
 ## SDK prerequisites
 
-The SDK reads the same API key from `NEOSIGMA_API_KEY`:
+The SDK reads a NeoSigma API key from `NEOSIGMA_API_KEY`. Create an `ns_live_...` key in NeoSigma under **Settings > Developer > API Keys**:
 
 ```bash
 export NEOSIGMA_API_KEY=ns_live_...
