@@ -41,8 +41,8 @@ delivery was lost.
 Never repair by guessing:
 
 - `diagnostics` contains `missing-env var=NAME`: the variable is not stored.
-  Apply core rule 2 (send the user to NeoSigma to add it). Do not edit the
-  script for it. When they confirm and `get_workspace_setup` lists it in
+  Apply core rule 2 (store it with the CLI or in NeoSigma). Do not edit the
+  script for it. When `get_workspace_setup` lists it in
   `env_var_names`, verify the same branch again.
 - `diagnostics` contains `unreachable-datastore ... reason=private-address`:
   the URL points at a private address. Ask for a public endpoint or switch to a
