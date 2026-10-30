@@ -57,7 +57,7 @@ in one turn, so it also runs on a schedule with no one to answer questions.
    not evidence of a missed problem. For each proposal whose
    `signals` contains `observation`, read the representative session's
    diagnosis with `get_session_observation`, and its turns with
-   `list_session_turns` when it has more than one turn. Then look up each
+   `list_session_turns`. Then look up each
    verifier in `verifier_ids`, the verifiers that failed that session. The
    failure is caught when one of them checks the problem the diagnosis
    records, such as `grounded-in-tool-results` for a price that contradicts a
@@ -69,6 +69,11 @@ in one turn, so it also runs on a schedule with no one to answer questions.
      deck that was not built, not only that the session failed.
    - The diagnosis records a failure: `failure_types` or `failure_reason` is
      not empty, and it does not record the session as succeeded.
+   - You confirm the failure in the turns yourself. A diagnosis can misread
+     how the product shows its output, such as a placeholder that the product
+     renders as a value. The prompts of the project's verifiers often state
+     these output conventions; read the turns by them, and drop the proposal
+     when the turns show no failure.
    - The cause is in the agent, not missing data, a missing product feature, a
      service outage, a tool that returned wrong data, or an internal test
      request. When the turns do not show whether a wrong value came from the
@@ -143,6 +148,11 @@ it. The failure is missed: count it with the others like it.
 the order the tool returns gives all three the same wrong price. The agent
 notices and transfers the user to a human. The spans show that the agent sent
 the right items, so the cause is the tool: suggest nothing.
+
+**The diagnosis misread the output.** A diagnosis says a response count was an
+unresolved placeholder, but the answer is `{{scalars/total_complete_responses}}`,
+which the project's verifiers say renders as a value. The turns show no
+failure, so drop the proposal.
 
 **Not something to verify.** Three sessions fail because the study has no data
 for the market the user asked about. The cause is not in the agent, so suggest
