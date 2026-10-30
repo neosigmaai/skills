@@ -139,6 +139,11 @@ exchange fee and then charges $42.55. The session failed `cites-a-source`,
 which checks for a cited file or URL, but no verifier that checks prices failed
 it. The failure is missed: count it with the others like it.
 
+**A tool returned wrong data.** An agent changes three items in an order, and
+the order the tool returns gives all three the same wrong price. The agent
+notices and transfers the user to a human. The spans show that the agent sent
+the right items, so the cause is the tool: suggest nothing.
+
 **Not something to verify.** Three sessions fail because the study has no data
 for the market the user asked about. The cause is not in the agent, so suggest
 nothing and report the group with that reason.
