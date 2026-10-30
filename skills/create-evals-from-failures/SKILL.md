@@ -37,8 +37,8 @@ create only what the user approves.
 2. **Propose window by window.** Split the range into six-hour windows and call
    `propose_evals_from_traces` for each window in order, waiting for each call to
    finish. When a response has `truncated: true`, split that window in half and
-   propose each half. Stop splitting at one hour and record the window as
-   incomplete.
+   propose each half. Stop splitting when the halves would be shorter than 30
+   minutes, and record a window that is still truncated as incomplete.
 3. **Collect every proposal and held failure.** Keep each proposal object
    unchanged; `create_eval_from_proposal` needs it exactly as returned. Count held
    failures by `reason`.
@@ -74,10 +74,9 @@ create only what the user approves.
    production-failures dataset.
 2. **Create one at a time.** Call `create_eval_from_proposal` with each approved
    proposal, unchanged. Retrying the same proposal is safe.
-3. **Check each result.** Report a proposal with an `existing_eval_id` as a
-   reused eval, and one without as a new eval. A response with `created: false`
-   means the eval was already in this dataset. Compare the returned task's
-   request with the approved `instruction`, and flag any mismatch: the
+3. **Check each result.** Report `created: true` as a new eval and
+   `created: false` as a reused eval that already existed. Compare the returned
+   task's request with the approved `instruction`, and flag any mismatch: the
    proposal matched an existing eval that replays a different request.
 4. **Handle refusals.** A refusal with reason `removed_from_dataset` means the
    matching eval was removed from this dataset on purpose. Report it and do not
