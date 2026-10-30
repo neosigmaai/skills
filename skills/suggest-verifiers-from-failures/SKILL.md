@@ -40,11 +40,21 @@ in one turn, so it also runs on a schedule with no one to answer questions.
    `id`, `slug`, `text`, `digest`, and `description`.
 3. **Find the failures.** Split the range into six-hour windows and call
    `propose_evals_from_traces` for each window in order, waiting for each call.
-   When a response has `truncated: true`, propose the same window once more. If
-   it is still truncated, split it in half and propose each half the same way,
-   down to 30 minutes, and record a window that is still truncated as
-   incomplete. Proposing is read-only; create no evals.
-4. **Keep the missed failures.** Ignore held failures. For each proposal whose
+   When a response has `truncated: true`, propose the same window once more.
+   If it is still truncated, split it in half and treat each half the same
+   way: one call, one more call when truncated, then a split. Stop splitting
+   and record the window as incomplete when it is 90 minutes or shorter, or
+   when a half scans as many sessions as the window it came from, because then
+   a smaller window does not read more sessions. Proposing is read-only;
+   create no evals.
+4. **Merge the proposals.** Repeated calls for the same sessions return
+   different subsets of proposals, with different members. Collect the
+   proposals of every call, merge them by `proposal_id`, and keep the longest
+   `member_session_ids` for each.
+5. **Keep the missed failures.** Ignore held failures. Skip a proposal whose
+   `signals` does not contain `observation`: without a diagnosis there is no
+   evidence that the session really failed, so a verifier that failed it is
+   not evidence of a missed problem. For each proposal whose
    `signals` contains `observation`, read the representative session's
    diagnosis with `get_session_observation`, and its turns with
    `list_session_turns` when it has more than one turn. Then look up each
@@ -57,17 +67,20 @@ in one turn, so it also runs on a schedule with no one to answer questions.
    proposal only when no verifier caught it and all of these hold:
    - `failure_text` names a concrete problem, such as a missing number or a
      deck that was not built, not only that the session failed.
+   - The diagnosis records a failure: `failure_types` or `failure_reason` is
+     not empty, and it does not record the session as succeeded.
    - The cause is in the agent, not missing data, a missing product feature, a
-     service outage, or an internal test request.
-   - The diagnosis does not record the session as succeeded.
+     service outage, a tool that returned wrong data, or an internal test
+     request. When the turns do not show whether a wrong value came from the
+     agent or from a tool, read the turn's spans with `list_trace_spans`.
    - The evidence is in the trace, so a verifier could see it.
-5. **Group by root cause.** Merge kept proposals that fail the same way, across
+6. **Group by root cause.** Merge kept proposals that fail the same way, across
    windows. Count the distinct failing sessions in each group from
    `member_session_ids`. Drop a group with only one failing session.
-6. **Match each group to a verifier.** Compare the group's failure with every
+7. **Match each group to a verifier.** Compare the group's failure with every
    kept verifier's `text` and `description`. Choose the verifier that checks
    the same kind of problem, if one exists.
-7. **Write the suggested text.**
+8. **Write the suggested text.**
    - **To change a verifier:** start from its `text` exactly as listed and change
      only what this failure needs, usually one or two sentences of the prompt.
      Keep every other field and the rest of the prompt unchanged.
@@ -77,24 +90,24 @@ in one turn, so it also runs on a schedule with no one to answer questions.
      uses.
    - In both cases, state the behavior to check, not the sessions that showed
      it, and do not name source files, functions, or customers.
-8. **Check the text against good sessions.** Use `search_sessions` to find two
+9. **Check the text against good sessions.** Use `search_sessions` to find two
    or three sessions with a similar request that succeeded. Read them, and
    confirm the suggested prompt would pass them. If it would fail one, narrow
    the prompt or drop the group.
-9. **Suggest.** Call `suggest_verifier` once for each group, best first:
-   - `project_id`, `verifier_slug`, and `verifier_text`.
-   - `base_digest`: the verifier's `digest` for a change; omit it for a new
-     verifier.
-   - `title`: one line stating what the verifier now catches.
-   - `rationale`: the root cause, what went wrong in the sessions, and why the
-     current verifiers missed them, in plain language for the person reviewing.
-   - `estimated_catches`: the failing sessions in the group.
-   - `example_session_ids`: up to 20 sessions from the group, clearest first.
+10. **Suggest.** Call `suggest_verifier` once for each group, best first:
+    - `project_id`, `verifier_slug`, and `verifier_text`.
+    - `base_digest`: the verifier's `digest` for a change; omit it for a new
+      verifier.
+    - `title`: one line stating what the verifier now catches.
+    - `rationale`: the root cause, what went wrong in the sessions, and why the
+      current verifiers missed them, in plain language for the person reviewing.
+    - `estimated_catches`: the failing sessions in the group.
+    - `example_session_ids`: up to 20 sessions from the group, clearest first.
 
-   A conflict with code `verifier_exists` means the new slug is in use; choose
-   another slug, or suggest a change to that verifier with its digest. A
-   suggestion for a slug that already has an open one replaces it and answers
-   `created: false`, so a daily run keeps one current suggestion per verifier.
+    A conflict with code `verifier_exists` means the new slug is in use; choose
+    another slug, or suggest a change to that verifier with its digest. A
+    suggestion for a slug that already has an open one replaces it and answers
+    `created: false`, so a daily run keeps one current suggestion per verifier.
 
 ## Output format
 
