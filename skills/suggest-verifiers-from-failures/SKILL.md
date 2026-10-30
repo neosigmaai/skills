@@ -14,9 +14,9 @@ in one turn, so it also runs on a schedule with no one to answer questions.
 
 1. **Suggest, never change.** Call only read tools and `suggest_verifier`. Never
    call `push_verifiers`, `create_eval_from_proposal`, or any other write tool.
-2. **Only failures no verifier caught.** A failure that a verifier already
-   failed needs no new verifier. Work only from failures whose `signals` do not
-   contain `verifier`.
+2. **Only failures no verifier caught.** A failure is caught when a verifier
+   that failed the session checks that problem. A verifier that failed the
+   session for an unrelated reason does not catch it.
 3. **One proposal call at a time.** A project allows one proposal request at a
    time. Never call `propose_evals_from_traces` in parallel. If a call reports
    that it is unavailable, wait about a minute and retry the same window, up to
@@ -37,18 +37,24 @@ in one turn, so it also runs on a schedule with no one to answer questions.
    the range to the last 24 hours.
 2. **Read the verifiers.** Page through `list_verifiers`. Keep the enabled
    verifiers whose `project_id` is this project or null. Record each one's
-   `slug`, `text`, `digest`, and `description`.
+   `id`, `slug`, `text`, `digest`, and `description`.
 3. **Find the failures.** Split the range into six-hour windows and call
    `propose_evals_from_traces` for each window in order, waiting for each call.
    When a response has `truncated: true`, propose the same window once more. If
    it is still truncated, split it in half and propose each half the same way,
    down to 30 minutes, and record a window that is still truncated as
    incomplete. Proposing is read-only; create no evals.
-4. **Keep the missed failures.** Keep each proposal whose `signals` contains
-   `observation` and not `verifier`. Ignore held failures. For the
-   representative session, read the diagnosis with `get_session_observation`,
-   and its turns with `list_session_turns` when it has more than one turn. Keep
-   the proposal only when all of these hold:
+4. **Keep the missed failures.** Ignore held failures. For each proposal whose
+   `signals` contains `observation`, read the representative session's
+   diagnosis with `get_session_observation`, and its turns with
+   `list_session_turns` when it has more than one turn. Then look up each
+   verifier in `verifier_ids`, the verifiers that failed that session. The
+   failure is caught when one of them checks the problem the diagnosis
+   records, such as `grounded-in-tool-results` for a price that contradicts a
+   tool result. A verifier that checks something else, such as citing a source
+   in a project whose agent never cites one, does not catch it. Treat a
+   verifier that is not in the list from step 2 as catching it. Keep the
+   proposal only when no verifier caught it and all of these hold:
    - `failure_text` names a concrete problem, such as a missing number or a
      deck that was not built, not only that the session failed.
    - The cause is in the agent, not missing data, a missing product feature, a
@@ -81,7 +87,7 @@ in one turn, so it also runs on a schedule with no one to answer questions.
      verifier.
    - `title`: one line stating what the verifier now catches.
    - `rationale`: the root cause, what went wrong in the sessions, and why the
-     current verifiers passed them, in plain language for the person reviewing.
+     current verifiers missed them, in plain language for the person reviewing.
    - `estimated_catches`: the failing sessions in the group.
    - `example_session_ids`: up to 20 sessions from the group, clearest first.
 
@@ -114,6 +120,11 @@ contains a placeholder instead of a value.
 and no verifier checks that a promised file was delivered. Suggest a new
 `delivers-promised-file` verifier: pass when every file the response says it
 made is in the trace, fail when one is missing.
+
+**Failed only by an unrelated verifier.** A retail support agent quotes a $0.50
+exchange fee and then charges $42.55. The session failed `cites-a-source`,
+which checks for a cited file or URL, but no verifier that checks prices failed
+it. The failure is missed: count it with the others like it.
 
 **Not something to verify.** Three sessions fail because the study has no data
 for the market the user asked about. The cause is not in the agent, so suggest
