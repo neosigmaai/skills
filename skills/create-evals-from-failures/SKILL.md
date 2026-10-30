@@ -36,9 +36,10 @@ create only what the user approves.
    seven days when the user gives none.
 2. **Propose window by window.** Split the range into six-hour windows and call
    `propose_evals_from_traces` for each window in order, waiting for each call to
-   finish. When a response has `truncated: true`, split that window in half and
-   propose each half. Stop splitting when the halves would be shorter than 30
-   minutes, and record a window that is still truncated as incomplete.
+   finish. When a response has `truncated: true`, propose the same window once
+   more. If it is still truncated, split it in half and propose each half the
+   same way. Stop splitting when the halves would be shorter than 30 minutes,
+   and record a window that is still truncated as incomplete.
 3. **Collect every proposal and held failure.** Keep each proposal object
    unchanged; `create_eval_from_proposal` needs it exactly as returned. Count held
    failures by `reason`.
