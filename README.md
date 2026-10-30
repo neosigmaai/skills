@@ -1,6 +1,6 @@
 # NeoSigma Skills
 
-The NeoSigma plugin for AI coding agents. It connects your agent to the [NeoSigma](https://neosigma.ai) MCP server and adds [Agent Skills](https://github.com/anthropics/skills) that teach the agent how to work with NeoSigma: instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, convert benchmarks into Harbor tasks, evaluate Clay on GTM Bench, and set up a workspace's sandbox.
+The NeoSigma plugin for AI coding agents. It connects your agent to the [NeoSigma](https://neosigma.ai) MCP server and adds [Agent Skills](https://github.com/anthropics/skills) that teach the agent how to work with NeoSigma: instrument a codebase with the NeoSigma SDK, import existing checks as verifiers, suggest verifiers that catch missed production failures, convert benchmarks into Harbor tasks, evaluate Clay on GTM Bench, and set up a workspace's sandbox.
 
 Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 
@@ -13,6 +13,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [clay-plugin-eval](./skills/clay-plugin-eval) | Set up Clay credentials in a NeoSigma Vault, run the fixed GTM Bench dataset with and without the Clay plugin, and generate a comparison report. |
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
 | [setup-environment](./skills/setup-environment) | Write the setup script that boots a workspace's repositories in a NeoSigma sandbox into the repository, verify it on a branch, repair it from the verification diagnostics until it passes, and open a pull request. |
+| [suggest-verifiers-from-failures](./skills/suggest-verifiers-from-failures) | Find a project's recent failures that no verifier caught, and suggest a verifier change or a new verifier that catches them, for review on the Verifiers page. |
 
 ## What the plugin includes
 
@@ -145,6 +146,7 @@ Once installed, your agent can use the MCP tools and skills when you ask it to:
 - Dual-export to NeoSigma alongside an existing OpenTelemetry backend
 - Verify that traces and events reached NeoSigma
 - Import existing trace-evaluable quality checks as repository-backed verifier YAML
+- Find yesterday's failures that no verifier caught, and suggest verifiers that catch them
 - Evaluate the Clay plugin against the fixed GTM Bench dataset
 - Convert a benchmark in this workspace into Harbor tasks and publish a NeoSigma dataset
 - Write the setup script that boots this repository in a NeoSigma sandbox, verify it, and open a pull request
