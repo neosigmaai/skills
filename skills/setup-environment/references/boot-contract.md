@@ -1,7 +1,9 @@
 # Setup script boot contract
 
-This file is the contract for a NeoSigma workspace setup script, kept in the
-repository at `.neosigma/workspaces/<workspace_id>/setup.sh`. It describes the machine the script boots on and every
+This file is the contract for a NeoSigma project setup script, kept in the
+repository at `.neosigma/workspaces/<workspace_id>/projects/<project_id>/setup.sh`.
+A workspace setup script, `.neosigma/workspaces/<workspace_id>/setup.sh`,
+follows the same contract. It describes the machine the script boots on and every
 rule the script must follow to pass verification. It does not describe how you
 author the script; the skill that loaded this file covers that.
 

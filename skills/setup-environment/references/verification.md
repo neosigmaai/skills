@@ -1,28 +1,27 @@
 # Verification errors and repair
 
-Read this file when `verify_workspace_setup` returns an error, or when a
+Read this file when `verify_project_setup` returns an error, or when a
 verification ends with anything other than `completed` and
 `outcome: "passed"`.
 
-## Errors from verify_workspace_setup
+## Errors from verify_project_setup
 
 - `409 setup_script_invalid`: the file cannot be used. The error says why: it
   is not a regular file, it is larger than 100 KB, it is not UTF-8, or it is
   empty. Fix the file, commit, push, and verify again.
-- `422` that names `setup_script_id` and says the primary repository has no
-  setup script file at the booted commit: the pushed commit has no file at the
-  path. Check the path, the workspace id, and that the branch is pushed.
+- `409 setup_script_missing`: the pushed commit has no file at the project's
+  `path`. Check the path, both ids, and that the branch is pushed.
 - `422` on `primary_ref`: the branch is not pushed or does not exist.
 - `409 workspace_setup_source_unavailable`: the workspace has no usable
   repository. Tell the user to connect one to the workspace in NeoSigma, and
   stop.
 - `429`: the organization's run quota is exhausted. Report it and stop.
 - `503`: GitHub or NeoSigma storage is unavailable for a moment. Wait a minute
-  and call `verify_workspace_setup` once more.
+  and call `verify_project_setup` once more.
 - Any other error: report its code and message, and stop. Do not guess a fix.
 
 When the lifecycle is still `queued` after 10 minutes, call
-`verify_workspace_setup` again for the same ref. NeoSigma replaces a run whose
+`verify_project_setup` again for the same ref. NeoSigma replaces a run whose
 delivery was lost.
 
 ## Results
@@ -42,8 +41,8 @@ Never repair by guessing:
 
 - `diagnostics` contains `missing-env var=NAME`: the variable is not stored.
   Apply core rule 2 (store it with the CLI or in NeoSigma). Do not edit the
-  script for it. When `get_workspace_setup` lists it in
-  `env_var_names`, verify the same branch again.
+  script for it. When `list_workspace_env_vars` or
+  `list_workspace_env_var_links` lists it, verify the same branch again.
 - `diagnostics` contains `unreachable-datastore ... reason=private-address`:
   the URL points at a private address. Ask for a public endpoint or switch to a
   local datastore.

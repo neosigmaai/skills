@@ -19,7 +19,7 @@ multi-repository workspace, inspect the sibling repositories too.
 - Do not ask the user for a per-eval command, an expected output, or a
   hand-written adapter.
 - When several independent agent surfaces exist, ask the user once which
-  logical agent this workspace represents.
+  logical agent this project represents.
 - A queue, an asynchronous job, a run-status endpoint, or an endpoint that
   creates another sandbox is not an entry point. Those return scheduling
   state, not the agent's result.
