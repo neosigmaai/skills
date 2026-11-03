@@ -12,7 +12,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [import-verifiers](./skills/import-verifiers) | Translate a codebase's trace-evaluable quality checks into repository-backed verifier YAML, then apply the complete set through the NeoSigma MCP sync workflow. |
 | [clay-plugin-eval](./skills/clay-plugin-eval) | Set up Clay credentials in a NeoSigma Vault, run the fixed GTM Bench dataset with and without the Clay plugin, and generate a comparison report. |
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
-| [setup-environment](./skills/setup-environment) | Write the setup script that boots a workspace's repositories in a NeoSigma sandbox into the repository, verify it on a branch, repair it from the verification diagnostics until it passes, and open a pull request. |
+| [setup-environment](./skills/setup-environment) | Write the setup script that boots a project's repositories in a NeoSigma sandbox into the repository, verify it on a branch, repair it from the verification diagnostics until it passes, and open a pull request. |
 | [suggest-verifiers-from-failures](./skills/suggest-verifiers-from-failures) | Find a project's recent failures that no verifier caught, and suggest a verifier change or a new verifier that catches them, for review on the Verifiers page. |
 
 ## What the plugin includes
