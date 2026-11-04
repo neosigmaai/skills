@@ -5,9 +5,10 @@ Two complete scripts in the proven shape. Both follow
 recorded process group, readiness gates before consumers, services bound to
 `0.0.0.0`, a per-service health gate, and a clean `exit 0`.
 
-They show the service stages only. A real script also starts the eval adapter
-from [`eval-harness-contract.md`](eval-harness-contract.md) and writes
-`/run/neosigma/runtime-logs.json`. Verification fails without the adapter.
+They show the service stages only. A real script also writes the ACP adapter
+bundle from [`eval-harness-contract.md`](eval-harness-contract.md), which has a
+complete adapter stage, and writes `/run/neosigma/runtime-logs.json`.
+Verification fails without the adapter.
 
 ## Two HTTP services and a local datastore
 

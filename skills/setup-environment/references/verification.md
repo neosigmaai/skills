@@ -28,7 +28,7 @@ delivery was lost.
 
 | Result | Meaning | Action |
 | --- | --- | --- |
-| `completed`, `outcome: "passed"` | The script booted and the harness probe passed. | Open or update the pull request. |
+| `completed`, `outcome: "passed"` | The script booted and the ACP conversation check passed. | Open or update the pull request. |
 | `completed`, `outcome: "failed"` | A script fault. | Repair from `failure_kind` and `diagnostics` on the same branch, then check, push, and verify again. |
 | `completed`, `outcome: null` | The boot was clean, but NeoSigma cannot prove it ran this commit. | Verify again once with `force: true`. |
 | `failed`, `failure_kind: "resource"` | The sandbox ran out of memory or disk. | Report it. Only reduce the install or build when the closure includes something it does not need. |
@@ -49,11 +49,21 @@ Never repair by guessing:
 - `diagnostics` contains `unreachable-datastore ... reason=connect-failed`:
   the endpoint did not accept a connection. Ask the user to check that it is
   public and that it allows the sandbox address.
-- `failure_kind: "health_probe"`: fix the eval adapter stage, not unrelated
+- `failure_kind: "health_probe"`: fix the ACP adapter stage, not unrelated
   service ports. See [`eval-harness-contract.md`](eval-harness-contract.md).
-  The probe's failure code is not a cause. When the diagnostics show no real
-  error, add the entry point self-test from that file before you change
-  anything else, and repair from the error it prints.
+  The `ACP check failed:` line names the cause:
+  - "ACP adapter specification is invalid" or "ACP runtime configuration is
+    invalid": fix `acp-adapter.json` against the schema, or `runtime.json`.
+  - "ACP probe command `acpx ...` exited N: ...": the adapter failed that ACP
+    call. The text after the colon is what the adapter reported. A bare
+    "Internal error" means the adapter raised one without a reason; give its
+    errors specific reasons, and check that the application it calls works in
+    the sandbox, for example with one real request in the script.
+  - "ACP target did not recall the first-turn challenge": the second prompt of
+    a session did not continue the first prompt's conversation.
+  - "ACP target leaked conversation state into a fresh session": a new session
+    could see an earlier one. Isolate every conversation, including state the
+    harness keeps on disk.
 - `failure_kind: "timeout"`: a step hung or the script stayed in the
   foreground. Find the stage after the last `[eval-stack]` milestone.
 - `failure_kind: "nonzero_exit"`: read the last `[eval-stack]` lines and the
