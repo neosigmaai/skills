@@ -70,6 +70,13 @@ only to standard error. It must:
 - Find its own files relative to its launcher, because NeoSigma installs the
   verified bundle in another directory. Read application settings from the
   environment in `runtime.json`.
+- Keep the trial identity NeoSigma sets: `NEOSIGMA_PROJECT` and every
+  `NEOSIGMA_EVAL_*` variable, such as `NEOSIGMA_EVAL_SESSION_ID`. Pass them
+  unchanged to every process the adapter starts, and start the application's
+  services from the setup script with the environment it receives. The
+  application's tracing uses them to attach each trial's trace, cost, and
+  tokens to the experiment. Never replace `NEOSIGMA_EVAL_SESSION_ID` with the
+  ACP session id.
 
 Two shapes cover most agents:
 
