@@ -46,6 +46,10 @@ only to standard error. It must:
 
 - Create one isolated application conversation for each ACP session, and
   continue that same conversation for every later prompt in the session.
+- Treat the ACP `sessionId` only as a conversation handle. During an eval,
+  NeoSigma adds the frozen `NEOSIGMA_EVAL_*` identity to the adapter environment.
+  Forward those values unchanged to every application process. Never assign the
+  ACP `sessionId` to `NEOSIGMA_EVAL_SESSION_ID` or derive telemetry identity from it.
 - Keep conversations apart. Nothing from one session may reach another,
   including state the harness keeps on disk. For example, a harness built on
   Claude Code keeps memory in its configuration directory: give each session
@@ -96,11 +100,14 @@ Write a fresh bundle on every boot:
   the repository, rubrics, or expected answers in it.
 - `runtime.json` is
   `{"working_directory": "<absolute path>", "environment": {"NAME": "value"}}`:
-  the working directory and the complete environment the adapter starts with.
-  It is the only environment the adapter gets, so include `HOME`, `LANG`,
-  `PATH`, and every value the application needs, including secrets read from
-  the script's environment and values the script generated for local
-  services. Write it as root with mode `0600`, never inside `payload/`.
+  the working directory and the base application environment. NeoSigma adds the
+  frozen `NEOSIGMA_EVAL_*` identity when it launches an eval; do not put those
+  variables in `runtime.json`.
+  Apart from those runner-owned values, it is the only environment the adapter
+  gets, so include `HOME`, `LANG`, `PATH`, and every value the application
+  needs, including secrets read from the script's environment and values the
+  script generated for local services. Write it as root with mode `0600`, never
+  inside `payload/`.
   NeoSigma reads it privately and never keeps it with the bundle. Pass secret
   values to the code that writes it through the environment, never as command
   arguments.
@@ -242,6 +249,7 @@ class Agent:
             os.environ["AGENT_PYTHON"], "-m", "app.agent_turn",
             cwd=os.environ["AGENT_CWD"],
             # Per-conversation state directory; name the harness's own variable.
+            # Inherit NeoSigma's frozen eval identity; session_id is ACP-only.
             env={**os.environ, "CLAUDE_CONFIG_DIR": conversation.state_directory},
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE, start_new_session=True,
@@ -439,6 +447,8 @@ and keep secrets in `runtime.json`.
 - Each ACP session is one conversation; a second prompt in a session continues
   it, and a new session starts empty, including any state the harness keeps on
   disk.
+- Every `NEOSIGMA_EVAL_*` value is inherited unchanged by the application; the
+  ACP `sessionId` is never used as a trace or telemetry identity.
 - Failures are ACP errors with a reason. Cancel uses the harness's real
   mechanism.
 - `acp-adapter.json` validates against the schema, `runtime.json` is root-owned
