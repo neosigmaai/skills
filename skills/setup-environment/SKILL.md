@@ -182,8 +182,8 @@ after a branch pass is expected.
 
 ### Step 6: read the result and repair
 
-`completed` with `outcome: "passed"` means the script booted and the harness
-probe passed; go to Step 7. For any other result, follow
+`completed` with `outcome: "passed"` means the script booted and the ACP
+conversation check passed; go to Step 7. For any other result, follow
 [`references/verification.md`](references/verification.md): repair from the
 diagnostics, never by guessing, on the same branch, then return to Step 4.
 
@@ -249,12 +249,12 @@ show the user the result before you push and verify.
 agents, a support bot and a research agent, and its projects are `support` and
 `research`. The user asks to set up `research`. Copy the workspace script to
 the `research` project's `path`, drop the stages only the support bot needs,
-keep the shared datastores, and point the eval adapter at the research agent's
-entry point. Leave the workspace script as it is, because `support` still
+keep the shared datastores, and point the ACP adapter at the research agent's
+harness. Leave the workspace script as it is, because `support` still
 boots it.
 
 **No direct harness.** The application only runs the agent through a job queue
-and a status endpoint. There is no synchronous seam, so the eval adapter cannot
-be honest. Write the script to `die` at the adapter stage, explain why to the
+and a status endpoint. There is no way to run it and wait for its reply, so the
+ACP adapter cannot be honest. Write the script to `die` at the adapter stage, explain why to the
 user, and ask whether they can add a direct CLI or API entry point to the
 repository.

@@ -1,0 +1,212 @@
+{
+  "$defs": {
+    "ACPContinuationProbe": {
+      "additionalProperties": false,
+      "description": "Application-appropriate prompts; only the first receives the random challenge.",
+      "properties": {
+        "first_prompt": {
+          "minLength": 1,
+          "title": "First Prompt",
+          "type": "string"
+        },
+        "recall_prompt": {
+          "minLength": 1,
+          "title": "Recall Prompt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "first_prompt",
+        "recall_prompt"
+      ],
+      "title": "ACPContinuationProbe",
+      "type": "object"
+    },
+    "RuntimeEntrypoint": {
+      "additionalProperties": false,
+      "description": "Explicit argv, without changing task PATH, cwd, user or home.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "arguments": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Arguments",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "path"
+      ],
+      "title": "RuntimeEntrypoint",
+      "type": "object"
+    },
+    "RuntimeInputs": {
+      "additionalProperties": false,
+      "description": "Complete, ordered build inputs and shared software pins.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "platforms": {
+          "items": {
+            "$ref": "#/$defs/RuntimePlatform"
+          },
+          "minItems": 1,
+          "title": "Platforms",
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/RuntimeSource"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Versions",
+          "type": "object"
+        }
+      },
+      "required": [
+        "platforms",
+        "sources",
+        "versions"
+      ],
+      "title": "RuntimeInputs",
+      "type": "object"
+    },
+    "RuntimePlatform": {
+      "additionalProperties": false,
+      "description": "Declared target requirements, separate from measured test coverage.",
+      "properties": {
+        "os": {
+          "const": "linux",
+          "title": "Os",
+          "type": "string"
+        },
+        "architecture": {
+          "enum": [
+            "x86_64",
+            "aarch64"
+          ],
+          "title": "Architecture",
+          "type": "string"
+        },
+        "libc": {
+          "enum": [
+            "glibc",
+            "musl"
+          ],
+          "title": "Libc",
+          "type": "string"
+        },
+        "loader": {
+          "title": "Loader",
+          "type": "string"
+        },
+        "minimum_libc": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Minimum Libc",
+          "type": "array"
+        },
+        "required_shell": {
+          "const": "/bin/sh",
+          "default": "/bin/sh",
+          "title": "Required Shell",
+          "type": "string"
+        }
+      },
+      "required": [
+        "os",
+        "architecture",
+        "libc",
+        "loader",
+        "minimum_libc"
+      ],
+      "title": "RuntimePlatform",
+      "type": "object"
+    },
+    "RuntimeSource": {
+      "additionalProperties": false,
+      "description": "An immutable build input; credentials never belong in its locator.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "digest"
+      ],
+      "title": "RuntimeSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Authored launch metadata; organization and retained identities are host-owned.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "inputs": {
+      "$ref": "#/$defs/RuntimeInputs"
+    },
+    "entrypoint": {
+      "$ref": "#/$defs/RuntimeEntrypoint"
+    },
+    "notices": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Notices",
+      "type": "array"
+    },
+    "probe": {
+      "$ref": "#/$defs/ACPContinuationProbe"
+    }
+  },
+  "required": [
+    "inputs",
+    "entrypoint",
+    "notices",
+    "probe"
+  ],
+  "title": "ACPSetupSpecification",
+  "type": "object"
+}

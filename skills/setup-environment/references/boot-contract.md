@@ -7,8 +7,8 @@ follows the same contract. It describes the machine the script boots on and ever
 rule the script must follow to pass verification. It does not describe how you
 author the script; the skill that loaded this file covers that.
 
-Read [`eval-harness-contract.md`](eval-harness-contract.md) for the eval entry
-point the script must expose, and [`examples.md`](examples.md) for complete
+Read [`eval-harness-contract.md`](eval-harness-contract.md) for the ACP adapter
+the script must write, and [`examples.md`](examples.md) for complete
 scripts in the proven shape.
 
 ## What verification does
@@ -17,7 +17,8 @@ NeoSigma boots the saved script once in a fresh Linux sandbox and passes it
 only when all of these hold:
 
 1. The script exits 0 within the boot time limit.
-2. The eval adapter answers its health check and its execution probe (see
+2. The ACP adapter bundle is valid, and the adapter keeps a conversation's
+   state across turns without sharing it with a new conversation (see
    [`eval-harness-contract.md`](eval-harness-contract.md)).
 
 After a clean boot, NeoSigma may also run one smoke command from the project.
