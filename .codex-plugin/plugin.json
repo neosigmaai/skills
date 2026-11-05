@@ -49,8 +49,8 @@
     "privacyPolicyURL": "https://neosigma.ai/privacy",
     "termsOfServiceURL": "https://neosigma.ai/terms",
     "defaultPrompt": [
-      "Why did my agent fail in production this week?",
-      "Turn this week's failing sessions into evals",
+      "Why did my agent fail in production recently?",
+      "Turn my agent's recent failures into evals",
       "Add NeoSigma tracing to this agent"
     ],
     "composerIcon": "./assets/icon.png",
@@ -63,13 +63,13 @@
           "positive": [
             {
               "description": "Find recent production failures",
-              "prompt": "Which of my agent's sessions failed in production in the last 7 days, and why?",
+              "prompt": "Which of my agent's recent sessions failed, and why?",
               "tools_triggered": [
                 "list_projects",
                 "search_sessions",
                 "get_session"
               ],
-              "expected_behavior": "Finds the person's project, searches the last 7 days of sessions for failures, reads a few failed sessions, and summarizes the main causes with links to the sessions."
+              "expected_behavior": "Finds the person's project, searches recent sessions for failures, reads a few failed sessions, and summarizes the main causes with links to the sessions."
             },
             {
               "description": "Read an issue and its evidence",
@@ -83,12 +83,12 @@
             },
             {
               "description": "Turn failures into evals",
-              "prompt": "Propose evals from this week's failing sessions so we can catch these failures again.",
+              "prompt": "Propose evals from my agent's recent failing sessions so we can catch these failures again.",
               "tools_triggered": [
                 "search_sessions",
                 "propose_evals_from_sessions"
               ],
-              "expected_behavior": "Finds failing sessions from this week, proposes evals from them, and shows each proposal with the session it came from. It does not save any eval until the person approves it."
+              "expected_behavior": "Finds recent failing sessions, proposes evals from them, and shows each proposal with the session it came from. It does not save any eval until the person approves it."
             },
             {
               "description": "Read an experiment result",
