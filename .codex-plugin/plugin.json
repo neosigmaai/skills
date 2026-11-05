@@ -1,7 +1,15 @@
 {
   "name": "neosigma",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "NeoSigma skills and MCP tools for coding agents: integrate the NeoSigma SDK (agent tracing and product events), import a codebase's existing checks as verifiers, suggest verifiers that catch missed production failures, convert benchmarks into Harbor tasks, evaluate the Clay plugin, write and verify a workspace's setup script, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
+  "author": {
+    "name": "NeoSigma",
+    "email": "founders@neosigma.ai",
+    "url": "https://neosigma.ai"
+  },
+  "homepage": "https://neosigma.ai",
+  "repository": "https://github.com/neosigmaai/skills",
+  "license": "MIT",
   "keywords": [
     "neosigma",
     "llm",
@@ -25,8 +33,102 @@
   },
   "interface": {
     "displayName": "NeoSigma",
+    "shortDescription": "Find and fix agent failures",
+    "longDescription": "NeoSigma gives your coding agent access to your AI agent's production traces, issues, datasets, evals and experiments, so it can find what is going wrong and test a fix next to your code.\n\nUse it to:\n- Search production sessions and read traces to find failures, including runs that look successful but are not.\n- Read the issues NeoSigma found and the sessions behind each one.\n- Turn failing sessions into proposed evals, review them, and save them to a dataset.\n- Run experiments on a dataset and compare results across agent versions.\n- Add NeoSigma tracing to your agent, import your existing checks as verifiers, and set up the environment your evals run in.\n\nWho it is for: teams that build and run AI agents and already send traces to NeoSigma, or want to start.\n\nLimits: you need a NeoSigma account, and you sign in on first use. The plugin reads and changes data only in the NeoSigma projects your account can access. It does not change your agent in production. Running an experiment uses your organization's NeoSigma usage.",
     "developerName": "NeoSigma",
     "category": "Developer Tools",
-    "websiteURL": "https://neosigma.ai"
+    "capabilities": [
+      "Search production sessions and read agent traces",
+      "Read issues and the sessions behind them",
+      "Propose evals from failing sessions and save them to datasets",
+      "Run experiments and read their results",
+      "Set up tracing, verifiers and eval environments"
+    ],
+    "websiteURL": "https://neosigma.ai",
+    "supportURL": "https://docs.neosigma.ai",
+    "privacyPolicyURL": "https://neosigma.ai/privacy",
+    "termsOfServiceURL": "https://neosigma.ai/terms",
+    "defaultPrompt": [
+      "Why did my agent fail in production recently?",
+      "Turn my agent's recent failures into evals",
+      "Add NeoSigma tracing to this agent"
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  },
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Find recent production failures",
+              "prompt": "Which of my agent's recent sessions failed, and why?",
+              "tools_triggered": [
+                "list_projects",
+                "search_sessions",
+                "get_session"
+              ],
+              "expected_behavior": "Finds the person's project, searches recent sessions for failures, reads a few failed sessions, and summarizes the main causes with links to the sessions."
+            },
+            {
+              "description": "Read an issue and its evidence",
+              "prompt": "Show me the open issues NeoSigma found for my agent and explain the top one.",
+              "tools_triggered": [
+                "list_issues",
+                "get_issue",
+                "get_session"
+              ],
+              "expected_behavior": "Lists the open issues, opens the top one, reads one or more of its sessions, and explains what goes wrong and how often."
+            },
+            {
+              "description": "Turn failures into evals",
+              "prompt": "Propose evals from my agent's recent failing sessions so we can catch these failures again.",
+              "tools_triggered": [
+                "search_sessions",
+                "propose_evals_from_sessions"
+              ],
+              "expected_behavior": "Finds recent failing sessions, proposes evals from them, and shows each proposal with the session it came from. It does not save any eval until the person approves it."
+            },
+            {
+              "description": "Read an experiment result",
+              "prompt": "How did my latest experiment do? Which tasks failed?",
+              "tools_triggered": [
+                "list_experiments",
+                "get_experiment",
+                "list_experiment_trials"
+              ],
+              "expected_behavior": "Opens the most recent experiment, reports the overall score and the number of passed and failed tasks, and names the failed tasks with their trial details."
+            },
+            {
+              "description": "List datasets and their tasks",
+              "prompt": "What eval datasets do I have, and what is in the biggest one?",
+              "tools_triggered": [
+                "list_datasets",
+                "list_dataset_tasks"
+              ],
+              "expected_behavior": "Lists the datasets in the project, picks the one with the most tasks, and summarizes what its tasks test."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Unrelated general question",
+              "prompt": "What is the capital of France?"
+            },
+            {
+              "description": "Unrelated coding task with no agent data",
+              "prompt": "Write a Python function that reverses a string."
+            },
+            {
+              "description": "Request for another product's data",
+              "prompt": "Show me my Datadog APM error rate for the checkout service."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "First public release of NeoSigma for Codex: search production sessions and traces, read issues, propose evals from failures, run and read experiments, and set up tracing and verifiers."
+      }
+    }
   }
 }
