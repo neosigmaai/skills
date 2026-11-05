@@ -10,5 +10,5 @@ When you change the plugin, increase the version in `.claude-plugin/plugin.json`
 
 ## MCP Server Configuration
 
-- Claude Code reads `.mcp.json`, and Codex reads `mcpServers` in `.codex-plugin/plugin.json`. Neither sends a credential: the server answers 401, and the agent signs the person in to NeoSigma through Auth0 (OAuth). An `Authorization` header in either file stops that sign-in.
+- Claude Code reads `.mcp.json`, and Codex reads it through `mcpServers` in `.codex-plugin/plugin.json`, which must be the path `./.mcp.json` for OpenAI's plugin review. Neither sends a credential: the server answers 401, and the agent signs the person in to NeoSigma through Auth0 (OAuth). An `Authorization` header in either file stops that sign-in.
 - Do not add a root `plugin.json` or `mcp.json` (Agent Plugins format). Codex prefers that format, and it removes the `Authorization` header from plugin MCP servers.
