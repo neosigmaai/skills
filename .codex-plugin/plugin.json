@@ -1,6 +1,6 @@
 {
   "name": "neosigma",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "NeoSigma skills and MCP tools for coding agents: integrate the NeoSigma SDK (agent tracing and product events), import a codebase's existing checks as verifiers, suggest verifiers that catch missed production failures, convert benchmarks into Harbor tasks, evaluate the Clay plugin, write and verify a workspace's setup script, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
   "author": {
     "name": "NeoSigma",
@@ -63,16 +63,16 @@
               "expected_behavior": "Finds the person's project, searches recent sessions for failures, reads a few failed sessions, and summarizes the main causes with links to the sessions."
             },
             {
-              "description": "Read an issue and its evidence",
-              "prompt": "Show me the open issues NeoSigma found for my agent and explain the top one.",
-              "tools_triggered": "list_issues, get_issue, get_session",
-              "expected_behavior": "Lists the open issues, opens the top one, reads one or more of its sessions, and explains what goes wrong and how often."
+              "description": "Explain one failed session",
+              "prompt": "Walk me through my agent's most recent failed session step by step.",
+              "tools_triggered": "get_session, list_session_turns, list_trace_spans",
+              "expected_behavior": "Finds the most recent failed session, reads its turns in order, and explains what the agent did at each step and where it went wrong, with a link to the trace."
             },
             {
-              "description": "Turn failures into evals",
-              "prompt": "Propose evals from my agent's recent failing sessions so we can catch these failures again.",
-              "tools_triggered": "search_sessions, propose_evals_from_sessions",
-              "expected_behavior": "Finds recent failing sessions, proposes evals from them, and shows each proposal with the session it came from. It does not save any eval until the person approves it."
+              "description": "Compare two experiments",
+              "prompt": "Compare my two most recent experiments. Which tasks got better or worse?",
+              "tools_triggered": "list_experiments, list_experiment_trials",
+              "expected_behavior": "Opens the two most recent experiments, compares their pass rates on the tasks both ran, and names each task whose result changed, or says that none changed."
             },
             {
               "description": "Read an experiment result",
