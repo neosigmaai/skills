@@ -14,6 +14,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 | [convert-benchmark-to-harbor](./skills/convert-benchmark-to-harbor) | Convert a benchmark in the developer's own workspace into faithful Harbor tasks, validate each task, and publish immutable task files to a NeoSigma dataset. |
 | [setup-environment](./skills/setup-environment) | Write the setup script that boots a project's repositories in a NeoSigma sandbox into the repository, verify it on a branch, repair it from the verification diagnostics until it passes, and open a pull request. |
 | [suggest-verifiers-from-failures](./skills/suggest-verifiers-from-failures) | Find a project's recent failures that no verifier caught, and suggest a verifier change or a new verifier that catches them, for review on the Verifiers page. |
+| [setup-eval](./skills/setup-eval) | Set up `neosigma setup-eval` in a repository: write the ACP adapter, the manifest, and the CI step, so the repository's own CI runs a dataset against its agent and gets scores. |
 
 ## What the plugin includes
 
