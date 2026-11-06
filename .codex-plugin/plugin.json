@@ -25,12 +25,7 @@
     "harbor"
   ],
   "skills": "./skills/",
-  "mcpServers": {
-    "neosigma": {
-      "type": "http",
-      "url": "https://api.neosigma.ai/mcp"
-    }
-  },
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "NeoSigma",
     "shortDescription": "Find and fix agent failures",
@@ -64,49 +59,31 @@
             {
               "description": "Find recent production failures",
               "prompt": "Which of my agent's recent sessions failed, and why?",
-              "tools_triggered": [
-                "list_projects",
-                "search_sessions",
-                "get_session"
-              ],
+              "tools_triggered": "list_projects, search_sessions, get_session",
               "expected_behavior": "Finds the person's project, searches recent sessions for failures, reads a few failed sessions, and summarizes the main causes with links to the sessions."
             },
             {
               "description": "Read an issue and its evidence",
               "prompt": "Show me the open issues NeoSigma found for my agent and explain the top one.",
-              "tools_triggered": [
-                "list_issues",
-                "get_issue",
-                "get_session"
-              ],
+              "tools_triggered": "list_issues, get_issue, get_session",
               "expected_behavior": "Lists the open issues, opens the top one, reads one or more of its sessions, and explains what goes wrong and how often."
             },
             {
               "description": "Turn failures into evals",
               "prompt": "Propose evals from my agent's recent failing sessions so we can catch these failures again.",
-              "tools_triggered": [
-                "search_sessions",
-                "propose_evals_from_sessions"
-              ],
+              "tools_triggered": "search_sessions, propose_evals_from_sessions",
               "expected_behavior": "Finds recent failing sessions, proposes evals from them, and shows each proposal with the session it came from. It does not save any eval until the person approves it."
             },
             {
               "description": "Read an experiment result",
               "prompt": "How did my latest experiment do? Which tasks failed?",
-              "tools_triggered": [
-                "list_experiments",
-                "get_experiment",
-                "list_experiment_trials"
-              ],
+              "tools_triggered": "list_experiments, get_experiment, list_experiment_trials",
               "expected_behavior": "Opens the most recent experiment, reports the overall score and the number of passed and failed tasks, and names the failed tasks with their trial details."
             },
             {
               "description": "List datasets and their tasks",
               "prompt": "What eval datasets do I have, and what is in the biggest one?",
-              "tools_triggered": [
-                "list_datasets",
-                "list_dataset_tasks"
-              ],
+              "tools_triggered": "list_datasets, list_dataset_tasks",
               "expected_behavior": "Lists the datasets in the project, picks the one with the most tasks, and summarizes what its tasks test."
             }
           ],
