@@ -65,14 +65,14 @@
             {
               "description": "Explain one failed session",
               "prompt": "Walk me through my agent's most recent failed session step by step.",
-              "tools_triggered": "search_sessions, list_session_turns, get_turn",
+              "tools_triggered": "get_session, list_session_turns, list_trace_spans",
               "expected_behavior": "Finds the most recent failed session, reads its turns in order, and explains what the agent did at each step and where it went wrong, with a link to the trace."
             },
             {
               "description": "Compare two experiments",
               "prompt": "Compare my two most recent experiments. Which tasks got better or worse?",
               "tools_triggered": "list_experiments, list_experiment_trials",
-              "expected_behavior": "Opens the two most recent experiments, compares their pass rates, and names the tasks that passed in one and failed in the other."
+              "expected_behavior": "Opens the two most recent experiments, compares their pass rates on the tasks both ran, and names each task whose result changed, or says that none changed."
             },
             {
               "description": "Read an experiment result",
