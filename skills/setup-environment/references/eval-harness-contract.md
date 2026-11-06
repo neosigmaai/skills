@@ -58,8 +58,11 @@ only to standard error. It must:
   as an ACP error with a specific reason, never as a made-up reply.
 - Implement cancellation with the harness's real mechanism: the application's
   cancel endpoint, or ending the turn's process group. Closing an HTTP stream
-  does not prove that server-side work stopped. Never retry a submitted turn
-  automatically.
+  does not prove that server-side work stopped. After `session/cancel`, end the
+  pending prompt with stop reason `cancelled`, even when the harness cannot stop
+  its work. Never retry a submitted turn automatically.
+- Wait for the whole application turn. Do not use an HTTP client whose default
+  limit is shorter than a turn: Node's `fetch` gives up after 5 minutes.
 - When `NEOSIGMA_EVAL_CONTEXT_PATH` is set, read the JSON file it names when
   the session starts. Its `input_data` is the original eval request,
   including application fields beyond the user message (for example an
