@@ -1,8 +1,8 @@
 {
   "name": "neosigma",
   "displayName": "NeoSigma",
-  "version": "1.0.0",
-  "description": "Skills for integrating the NeoSigma SDK (agent tracing in Python and TypeScript, framework adapters, product events, dual export) and importing a codebase's existing checks into NeoSigma as verifiers, following NeoSigma best practices.",
+  "version": "1.1.0",
+  "description": "Skills and MCP tools for NeoSigma: integrate the NeoSigma SDK (agent tracing in Python and TypeScript, framework adapters, product events, dual export), import a codebase's existing checks into NeoSigma as verifiers, and read traces, issues, datasets, and evaluation runs through the NeoSigma MCP server.",
   "author": {
     "name": "NeoSigma",
     "email": "founders@neosigma.ai"
@@ -20,8 +20,10 @@
     "agents",
     "sdk",
     "verifiers",
-    "evals"
+    "evals",
+    "mcp"
   ],
   "category": "developer-tools",
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "mcpServers": "./.cursor-plugin/mcp.json"
 }

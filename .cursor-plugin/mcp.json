@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "neosigma": {
+      "url": "https://api.neosigma.ai/mcp"
+    }
+  }
+}
