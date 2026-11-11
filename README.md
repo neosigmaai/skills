@@ -23,7 +23,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 
 ## Sign-in
 
-Claude Code and Codex sign you in to the MCP server with your NeoSigma account, in the browser, the first time you connect. You do not copy an API key. The agent acts in the organization you opened last in NeoSigma. To use another organization, switch to it in NeoSigma.
+Claude Code, Codex, and Cursor sign you in to the MCP server with your NeoSigma account, in the browser, the first time you connect. You do not copy an API key. The agent acts in the organization you opened last in NeoSigma. To use another organization, switch to it in NeoSigma.
 
 ## Installation
 
@@ -102,7 +102,9 @@ Install as a [Cursor plugin](https://cursor.com/docs/plugins):
 /add-plugin neosigma
 ```
 
-The skills work in Cursor. The NeoSigma MCP server does not authenticate in Cursor yet. To use the MCP tools in Cursor, add the server to your Cursor MCP settings with the header `Authorization: Bearer <your API key>`.
+Then open **Customize > MCPs**. **Neosigma** shows under **Needs Attention**. Select **Authenticate**, and sign in to NeoSigma in the browser that opens.
+
+To make sure that the plugin works, look for **Neosigma** under **Connected**, with its tools enabled. If you also added a `neosigma` server to `~/.cursor/mcp.json`, select **Neosigma** and choose the **Plugin** source.
 
 ### Skills only
 
