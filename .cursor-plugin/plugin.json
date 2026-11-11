@@ -24,6 +24,5 @@
     "mcp"
   ],
   "category": "developer-tools",
-  "skills": "./skills/",
-  "mcpServers": "./.cursor-plugin/mcp.json"
+  "skills": "./skills/"
 }

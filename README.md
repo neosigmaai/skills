@@ -102,9 +102,9 @@ Install as a [Cursor plugin](https://cursor.com/docs/plugins):
 /add-plugin neosigma
 ```
 
-Then open **Customize > MCPs** in the sidebar, turn on `neosigma`, and follow the sign-in prompt. Sign in to NeoSigma in the browser that opens.
+Then open **Customize > MCPs**. **Neosigma** shows under **Needs Attention**. Select **Authenticate**, and sign in to NeoSigma in the browser that opens.
 
-To make sure that the plugin works, look for the NeoSigma tools in the tools list of the chat panel. If the server does not connect, open the Output panel and select **MCP Logs**.
+To make sure that the plugin works, look for **Neosigma** under **Connected**, with its tools enabled. If you also added a `neosigma` server to `~/.cursor/mcp.json`, select **Neosigma** and choose the **Plugin** source.
 
 ### Skills only
 
