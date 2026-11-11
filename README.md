@@ -23,7 +23,7 @@ Full SDK documentation: [docs.neosigma.ai](https://docs.neosigma.ai)
 
 ## Sign-in
 
-Claude Code, Codex, and Cursor sign you in to the MCP server with your NeoSigma account, in the browser, the first time you connect. You do not copy an API key. The agent acts in the organization you opened last in NeoSigma. To use another organization, switch to it in NeoSigma.
+Claude Code, Codex, Cursor, and Grok Build sign you in to the MCP server with your NeoSigma account, in the browser, the first time you connect. You do not copy an API key. The agent acts in the organization you opened last in NeoSigma. To use another organization, switch to it in NeoSigma.
 
 ## Installation
 
@@ -57,6 +57,18 @@ To make sure that the plugin works, run `/mcp` and look for `neosigma`.
    ```
 
 To make sure that the plugin works, run `/mcp` and look for `neosigma`.
+
+### Grok Build
+
+Grok Build reads Claude Code plugins, so it installs this plugin as it is. Grok asks you to trust a plugin from GitHub before it installs it:
+
+```bash
+grok plugin install neosigmaai/skills --trust
+```
+
+Then start `grok`, run `/mcp`, select `neosigma`, and sign in to NeoSigma in the browser that opens.
+
+To make sure that the plugin works, ask the agent to list your NeoSigma projects. The tool calls start with `neosigma__`.
 
 ### Pi
 
