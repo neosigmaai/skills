@@ -48,8 +48,8 @@
       "Turn my agent's recent production failures into evals and save them to a dataset",
       "Compare my last two experiments: which tasks got better and which got worse?"
     ],
-    "brandColor": "#7C3AED",
-    "brandColorDark": "#A78BFA",
+    "brandColor": "#0090FF",
+    "brandColorDark": "#0090FF",
     "composerIcon": "./assets/icon.png",
     "logo": "./assets/icon.png"
   },
