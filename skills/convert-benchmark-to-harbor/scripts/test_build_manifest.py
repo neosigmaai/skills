@@ -18,13 +18,16 @@ if SPEC is None or SPEC.loader is None:
     raise RuntimeError("could not load build_manifest.py")
 BUILD_MANIFEST = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILD_MANIFEST)
+# The serializer rejects symlinks anywhere in a task path, and the default
+# temporary directory is symlinked on some hosts (macOS: /var -> /private/var).
+TEMPORARY_ROOT = os.path.realpath(tempfile.gettempdir())
 
 
 class BuildManifestTests(unittest.TestCase):
     def test_cli_preserves_nested_binary_bytes_media_types_and_executable_mode(
         self,
     ) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             temporary = Path(temporary_directory)
             task = temporary / "task"
             (task / "tests").mkdir(parents=True)
@@ -82,7 +85,7 @@ class BuildManifestTests(unittest.TestCase):
     def test_cli_rejects_symlinks_instead_of_dereferencing_host_content(self) -> None:
         if not hasattr(os, "symlink"):
             self.skipTest("symlinks are unavailable")
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             temporary = Path(temporary_directory)
             task = temporary / "task"
             task.mkdir()
@@ -108,7 +111,7 @@ class BuildManifestTests(unittest.TestCase):
             self.assertNotIn("must not be copied", result.stdout)
 
     def test_descriptor_read_rejects_a_file_swapped_to_a_symlink(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             temporary = Path(temporary_directory)
             task = temporary / "task"
             task.mkdir()
@@ -138,7 +141,7 @@ class BuildManifestTests(unittest.TestCase):
             self.assertTrue(swapped)
 
     def test_cli_rejects_an_oversized_sparse_file_before_encoding(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             task = Path(temporary_directory) / "task"
             task.mkdir()
             oversized = task / "oversized.bin"
@@ -163,7 +166,7 @@ class BuildManifestTests(unittest.TestCase):
             self.assertEqual(result.stdout, "")
 
     def test_cli_rejects_output_inside_task_to_keep_retries_immutable(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             task = Path(temporary_directory) / "task"
             task.mkdir()
             (task / "task.toml").write_text("[task]\nname='source/example'\n")
@@ -188,7 +191,7 @@ class BuildManifestTests(unittest.TestCase):
             self.assertFalse((task / "manifest.json").exists())
 
     def test_cli_replaces_an_output_symlink_without_writing_its_target(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             temporary = Path(temporary_directory)
             task = temporary / "task"
             task.mkdir()
@@ -221,7 +224,7 @@ class BuildManifestTests(unittest.TestCase):
             )
 
     def test_cli_rejects_a_symlink_in_the_task_root_ancestry(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             temporary = Path(temporary_directory)
             real_parent = temporary / "real"
             task = real_parent / "task"
@@ -247,7 +250,7 @@ class BuildManifestTests(unittest.TestCase):
             self.assertEqual(result.stdout, "")
 
     def test_manifest_rejects_deep_empty_directory_trees(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             task = Path(temporary_directory) / "task"
             current = task
             for index in range(BUILD_MANIFEST.MAX_PATH_DEPTH + 1):
@@ -258,7 +261,7 @@ class BuildManifestTests(unittest.TestCase):
                 BUILD_MANIFEST.build_manifest(task, "source/1")
 
     def test_manifest_bounds_directory_entries_before_collecting_files(self) -> None:
-        with tempfile.TemporaryDirectory(dir="/private/tmp") as temporary_directory:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_ROOT) as temporary_directory:
             task = Path(temporary_directory) / "task"
             task.mkdir()
             for index in range(3):
